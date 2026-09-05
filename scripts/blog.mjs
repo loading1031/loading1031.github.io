@@ -61,6 +61,26 @@ function fail(message) {
 	process.exit(1);
 }
 
+/**
+ * 블로그 폴더 밖에서 실행되는 것을 막는다.
+ *
+ * 다른 프로젝트(특히 회사 레포) 세션에서 블로그 글을 쓰면, 그 세션 컨텍스트에 사내 정보가
+ * 들어 있는 채로 공개될 글을 만들게 된다. 글은 언제나 이 레포에서 연 세션에서 쓴다.
+ */
+function requireInsideRepo() {
+	const cwd = fs.realpathSync(process.cwd());
+	const root = fs.realpathSync(ROOT);
+	if (cwd !== root && !cwd.startsWith(root + path.sep)) {
+		console.error('✗ 블로그 폴더 밖에서는 실행할 수 없다.');
+		console.error(`    현재 위치: ${cwd}`);
+		console.error(`    블로그 폴더: ${root}`);
+		console.error('');
+		console.error('  다른 프로젝트 세션에서 블로그 글을 쓰면 그 세션의 컨텍스트(사내 코드 등)가');
+		console.error('  공개될 글에 섞일 수 있다. 블로그 폴더에서 세션을 새로 열고 거기서 쓸 것.');
+		process.exit(1);
+	}
+}
+
 // ---------- frontmatter ----------
 
 /** 이 블로그가 쓰는 범위(문자열 / 불리언 / 문자열 배열)만 다루는 최소 파서. */
@@ -318,6 +338,8 @@ function cmdDoctor(flags) {
 
 const [command, ...rest] = process.argv.slice(2);
 const { flags, positional } = parseArgs(rest);
+
+if (command) requireInsideRepo();
 
 switch (command) {
 	case 'new':
