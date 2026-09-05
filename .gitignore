@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# pagefind 검색 인덱스 (빌드 때 dist -> public 으로 복사된다)
+public/pagefind/

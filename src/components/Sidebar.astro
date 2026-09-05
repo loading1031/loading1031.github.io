@@ -1,0 +1,220 @@
+---
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { getCollection } from "astro:content";
+import IconArchive from "@/assets/icons/IconArchive.svg";
+import IconHash from "@/assets/icons/IconHash.svg";
+import IconSearch from "@/assets/icons/IconSearch.svg";
+import IconRss from "@/assets/icons/IconRss.svg";
+import IconX from "@/assets/icons/IconX.svg";
+import Socials from "./Socials.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+import { SECTIONS, sectionOf } from "@/data/sections";
+import { profile } from "@/data/resume";
+import { postFilter } from "@/utils/postFilter";
+import { stripBase, stripLocale } from "@/utils/withBase";
+import { useTranslations } from "@/i18n";
+import config from "@/config";
+
+const { site, features } = config;
+
+const locale = Astro.currentLocale ?? site.lang;
+const t = useTranslations(locale);
+
+// 섹션별 글 개수
+const posts = (await getCollection("posts")).filter(postFilter);
+const countBySection = new Map<string, number>();
+for (const post of posts) {
+  const key = sectionOf(post.id);
+  countBySection.set(key, (countBySection.get(key) ?? 0) + 1);
+}
+
+// base/locale 접두사를 벗겨서 현재 경로를 비교한다.
+const relativePath = stripBase(Astro.url.pathname);
+const trimmed =
+  relativePath.endsWith("/") && relativePath !== "/"
+    ? relativePath.slice(0, -1)
+    : relativePath;
+const currentPath = stripLocale(trimmed, locale);
+
+const isHome = currentPath === "/" || currentPath === "";
+const isActive = (path: string) =>
+  currentPath === path || currentPath.startsWith(`${path}/`);
+
+const initials = profile.name.slice(0, 2);
+---
+
+<!-- 모바일에서 사이드바가 열렸을 때 뒤를 덮는 레이어 -->
+<div
+  id="sidebar-backdrop"
+  class="fixed inset-0 z-30 hidden bg-black/40 backdrop-blur-[2px] lg:hidden"
+  aria-hidden="true"
+>
+</div>
+
+<aside
+  id="sidebar"
+  class="border-border bg-surface fixed inset-y-0 start-0 z-40 flex w-72 -translate-x-full flex-col overflow-y-auto border-e transition-transform duration-200 ease-out rtl:translate-x-full lg:w-64 lg:translate-x-0 rtl:lg:translate-x-0"
+  aria-label={t.nav.home}
+>
+  <!-- 모바일 닫기 버튼 -->
+  <button
+    id="sidebar-close"
+    class="focus-outline absolute end-2 top-2 p-2 lg:hidden"
+    aria-label={t.a11y.closeMenu}
+  >
+    <IconX class="size-5" />
+  </button>
+
+  <!-- 프로필 -->
+  <div class="border-border border-b px-6 pt-8 pb-6">
+    <a
+      href={getRelativeLocaleUrl(locale, "")}
+      class="focus-outline group block"
+      aria-current={isHome ? "page" : undefined}
+    >
+      {
+        profile.avatar ? (
+          <img
+            src={profile.avatar}
+            alt=""
+            width="72"
+            height="72"
+            class="border-border mb-4 size-18 rounded-full border object-cover"
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            class="bg-accent text-accent-foreground mb-4 flex size-18 items-center justify-center rounded-full text-xl font-semibold"
+          >
+            {initials}
+          </div>
+        )
+      }
+      <div class="group-hover:text-accent text-base font-semibold">
+        {profile.name}
+      </div>
+      <div class="text-muted-foreground text-sm">{profile.role}</div>
+    </a>
+    <div class="text-muted-foreground mt-3 -ms-2">
+      <Socials />
+    </div>
+  </div>
+
+  <!-- 섹션 네비게이션 -->
+  <nav class="flex-1 px-3 py-5" aria-label={t.nav.posts}>
+    <a
+      href={getRelativeLocaleUrl(locale, "")}
+      class:list={[
+        "nav-item",
+        { "nav-item-active": isHome },
+      ]}
+      aria-current={isHome ? "page" : undefined}
+    >
+      {t.nav.home}
+      <span class="text-muted-foreground ms-auto text-xs">이력서</span>
+    </a>
+
+    <div class="text-muted-foreground mt-5 mb-1 px-3 text-xs font-medium tracking-wider uppercase">
+      기록
+    </div>
+    {
+      SECTIONS.map(section => (
+        <a
+          href={getRelativeLocaleUrl(locale, section.key)}
+          class:list={[
+            "nav-item",
+            { "nav-item-active": isActive(`/${section.key}`) },
+          ]}
+          aria-current={isActive(`/${section.key}`) ? "page" : undefined}
+        >
+          {section.label}
+          <span class="text-muted-foreground ms-auto text-xs tabular-nums">
+            {countBySection.get(section.key) ?? 0}
+          </span>
+        </a>
+      ))
+    }
+
+    <div class="text-muted-foreground mt-5 mb-1 px-3 text-xs font-medium tracking-wider uppercase">
+      찾아보기
+    </div>
+    <a
+      href={getRelativeLocaleUrl(locale, "tags")}
+      class:list={["nav-item", { "nav-item-active": isActive("/tags") }]}
+    >
+      <IconHash class="size-4 opacity-70" />
+      {t.nav.tags}
+    </a>
+    {
+      features.showArchives && (
+        <a
+          href={getRelativeLocaleUrl(locale, "archives")}
+          class:list={[
+            "nav-item",
+            { "nav-item-active": isActive("/archives") },
+          ]}
+        >
+          <IconArchive class="size-4 opacity-70" />
+          {t.nav.archives}
+        </a>
+      )
+    }
+    {
+      features.search !== false && (
+        <a
+          href={getRelativeLocaleUrl(locale, "search")}
+          class:list={["nav-item", { "nav-item-active": isActive("/search") }]}
+        >
+          <IconSearch class="size-4 opacity-70" />
+          {t.nav.search}
+        </a>
+      )
+    }
+  </nav>
+
+  <!-- 하단: 테마 전환 + RSS -->
+  <div
+    class="border-border flex items-center justify-between border-t px-5 py-3"
+  >
+    {features.lightAndDarkMode && <ThemeToggle />}
+    <a
+      href={`${import.meta.env.BASE_URL.replace(/\/?$/, "/")}rss.xml`}
+      class="focus-outline hover:text-accent text-muted-foreground p-2"
+      title="RSS"
+      aria-label="RSS"
+    >
+      <IconRss class="size-5" />
+    </a>
+  </div>
+</aside>
+
+<script>
+  function setupSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    const backdrop = document.getElementById("sidebar-backdrop");
+    const openBtn = document.getElementById("sidebar-open");
+    const closeBtn = document.getElementById("sidebar-close");
+    if (!sidebar || !backdrop) return;
+
+    const open = () => {
+      sidebar.classList.remove("-translate-x-full", "rtl:translate-x-full");
+      backdrop.classList.remove("hidden");
+      openBtn?.setAttribute("aria-expanded", "true");
+    };
+    const close = () => {
+      sidebar.classList.add("-translate-x-full", "rtl:translate-x-full");
+      backdrop.classList.add("hidden");
+      openBtn?.setAttribute("aria-expanded", "false");
+    };
+
+    openBtn?.addEventListener("click", open);
+    closeBtn?.addEventListener("click", close);
+    backdrop.addEventListener("click", close);
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") close();
+    });
+  }
+
+  setupSidebar();
+  document.addEventListener("astro:after-swap", setupSidebar);
+</script>

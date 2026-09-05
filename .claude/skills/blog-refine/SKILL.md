@@ -17,7 +17,7 @@ node scripts/blog.mjs list --drafts
 인자로 slug 이 주어졌으면 그걸 쓰고, 아니면 목록을 보여주고 고르게 한다.
 
 ```bash
-node scripts/blog.mjs show <slug>
+node scripts/blog.mjs show <섹션/슬러그>
 ```
 
 ## 2. 점검 항목
@@ -50,8 +50,10 @@ node scripts/blog.mjs show <slug>
 
 **frontmatter**
 - `description` 이 목록에서 읽혔을 때 클릭할 만한가 (제목 반복이 아니라 내용 요약)
-- `tags` 가 맞는가 — `study` / `insight` / `til`
-- `pubDate` — 캡처한 날 그대로 둘지, 발행일로 바꿀지 확인한다
+- **섹션이 맞는가** — 파일이 `src/content/posts/<섹션>/` 아래 제자리에 있는지.
+  섹션을 옮기면 URL 이 바뀌므로 발행 전에 결정한다.
+- `tags` 는 섹션 안에서 주제를 더 나눌 때만. 억지로 붙이지 않는다.
+- `pubDatetime` — 캡처한 날 그대로 둘지, 발행일로 바꿀지 확인한다
 
 ## 3. 고치기
 
@@ -66,4 +68,4 @@ node scripts/blog.mjs show <slug>
 node scripts/blog.mjs doctor
 ```
 
-통과하면 "발행 준비됨. `/blog-publish <slug>`" 라고 알린다.
+통과하면 "발행 준비됨. `/blog-publish <섹션/슬러그>`" 라고 알린다.

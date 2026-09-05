@@ -14,7 +14,7 @@ description: 다듬어진 초안을 발행한다. 계정/빌드 점검 → draft
 node scripts/blog.mjs list --drafts
 ```
 
-slug 이 주어지지 않았으면 고르게 한다.
+`<섹션/슬러그>` 가 주어지지 않았으면 고르게 한다.
 
 ## 2. 사전 점검
 
@@ -37,7 +37,7 @@ git config user.email tjdans1031@gmail.com && git config user.name loading1031
 ## 3. 마지막으로 글을 읽는다
 
 ```bash
-node scripts/blog.mjs show <slug>
+node scripts/blog.mjs show <섹션/슬러그>
 ```
 
 `/blog-refine` 을 아직 안 거쳤다면 여기서 최소한 이것만 본다:
@@ -47,7 +47,7 @@ node scripts/blog.mjs show <slug>
 ## 4. draft 해제하고 커밋
 
 ```bash
-node scripts/blog.mjs ready <slug>
+node scripts/blog.mjs ready <섹션/슬러그>
 git add -A
 git status --short
 ```
@@ -79,7 +79,7 @@ gh run watch <run-id> -R loading1031/loading1031.github.io --exit-status --inter
 배포 후 실제로 떴는지 확인한다:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://loading1031.github.io/blog/<slug>/
+curl -s -o /dev/null -w '%{http_code}\n' https://loading1031.github.io/<섹션>/<슬러그>/
 ```
 
 200 이면 글 URL 을 알리고 끝낸다. 200 이 아니면 1~2분 뒤 다시 확인한다

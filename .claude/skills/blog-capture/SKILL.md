@@ -74,10 +74,17 @@ pwd
 
 한 번에 정리해서 보여주고 확인받는다.
 
+- **섹션** — 아래 넷 중 하나. URL 의 첫 경로가 된다.
+  | 섹션 | key | 무엇을 담나 |
+  | --- | --- | --- |
+  | 프로젝트 | `project` | 만들면서 부딪힌 것들. 왜 그렇게 만들었는지까지 |
+  | Study | `study` | 공부 기록, Claude와의 대화에서 건진 인사이트 |
+  | 자격증 | `cert` | 준비 과정, 정리한 개념, 시험 후기 |
+  | 논문 | `paper` | 읽은 논문을 내 말로 다시 정리한 기록 |
 - **제목** (한글)
 - **slug** (URL 이 된다. 영문 소문자 + 하이픈)
-- **태그** — `study`(공부 기록) / `insight`(Claude 인사이트) / `til`(짧은 기록)
-- **한 줄 요약** (목록에 보이는 description)
+- **한 줄 요약** (목록과 검색 결과에 보이는 description)
+- **태그** (선택) — 섹션 안에서 주제를 더 잘게 나눌 때만. 없어도 된다.
 
 ## 5. 글을 쓴다
 
@@ -115,19 +122,20 @@ pwd
 
 ```bash
 node scripts/blog.mjs new \
+  --section study \
   --title "제목" \
   --slug my-post-slug \
-  --tags study \
   --description "한 줄 요약" \
-  --source "어떤 맥락에서 나왔는지 (회사 프로젝트명은 쓰지 않는다)" \
+  --tags "태그1,태그2" \
   --body-file - <<'EOF'
 본문
 EOF
 ```
 
 `draft: true` 로 저장되므로 배포되지 않는다.
+새 섹션이 필요하면 `src/data/sections.ts` 에 먼저 추가한다 (스크립트가 그 파일을 읽는다).
 
 ## 7. 마무리
 
-미리보기 방법을 한 줄로 알린다: `npm run dev` → `http://localhost:4321/blog/<slug>/`
+미리보기 방법을 한 줄로 알린다: `npm run dev` → `http://localhost:4321/<섹션>/<슬러그>/`
 발행은 `/blog-publish` 로 한다. 여기서 커밋·푸시하지 않는다.

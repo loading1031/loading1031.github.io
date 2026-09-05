@@ -1,7 +1,8 @@
 # loading.log
 
 공부한 내용과 Claude와의 대화에서 얻은 인사이트를 정리해 올리는 개인 기술 블로그.
-Astro 블로그 템플릿 기반, GitHub Pages 배포.
+[AstroPaper](https://github.com/satnaing/astro-paper) v6 기반 (Astro 7 + Tailwind 4),
+홈은 이력서, 글은 네 섹션으로 나뉜다. GitHub Pages 배포.
 
 - 사이트: https://loading1031.github.io
 - 레포: https://github.com/loading1031/loading1031.github.io
@@ -68,10 +69,8 @@ gh run list -R loading1031/loading1031.github.io
 
 ### 손으로 쓸 때
 
-`src/content/_post-template.md` 를 복사해 `src/content/blog/<slug>.md` 로 만든다.
-파일 이름이 곧 URL (`/blog/<slug>/`) 이므로 영문 소문자 + 하이픈으로 짓는다.
-`tags` 는 `src/consts.ts` 의 `TAG_LABELS` 에 정의된 값(`study` / `insight` / `til`)을 쓰고,
-새 분류는 `TAG_LABELS` 에 한글 라벨을 먼저 등록한다.
+`src/content/posts/_post-template.md` 를 복사해 `src/content/posts/<섹션>/<슬러그>.md` 로 만든다.
+디렉터리가 곧 섹션이고 URL 이 된다 — `posts/study/hydration.md` → `/study/hydration/`.
 
 글의 기준: **6개월 뒤의 내가 읽고 바로 써먹을 수 있는가.**
 Claude 답변은 그대로 붙여넣지 말고 이해한 말로 다시 쓴다.
@@ -87,28 +86,58 @@ npm run preview  # 빌드 결과 미리보기
 글 파이프라인 헬퍼. 판단은 스킬이 하고, 틀리면 안 되는 기계적인 일은 이 스크립트가 한다.
 
 ```bash
-node scripts/blog.mjs list --drafts     # 초안 목록
-node scripts/blog.mjs show <slug>       # 원문 출력
-node scripts/blog.mjs new --title ...   # 초안 생성 (frontmatter/태그 검증 포함)
-node scripts/blog.mjs ready <slug>      # draft 해제
-node scripts/blog.mjs doctor --build    # 계정/frontmatter/빌드 점검
+node scripts/blog.mjs list --drafts            # 초안 목록
+node scripts/blog.mjs show <섹션/슬러그>          # 원문 출력
+node scripts/blog.mjs new --section study ...  # 초안 생성 (frontmatter/섹션 검증 포함)
+node scripts/blog.mjs ready <섹션/슬러그>         # draft 해제
+node scripts/blog.mjs doctor --build           # 계정/frontmatter/빌드 점검
 ```
 
 ## 구조
 
 ```
-.claude/skills/    # blog-capture / blog-refine / blog-publish (이 레포 안에서만 동작)
-scripts/blog.mjs   # 글 파이프라인 헬퍼 CLI
+astro-paper.config.ts   # 사이트 제목·설명·소셜·기능 토글 (여기부터 본다)
+astro.config.ts         # 통합, i18n(ko), 폰트, 마크다운 플러그인
+.claude/skills/         # blog-capture / blog-refine / blog-publish (이 레포 안에서만 동작)
+scripts/blog.mjs        # 글 파이프라인 헬퍼 CLI
 src/
-  consts.ts          # 사이트 제목, 설명, 태그 라벨
-  content.config.ts  # 글 frontmatter 스키마
-  content/blog/      # 글 (.md / .mdx)
-  utils/posts.ts     # draft 필터링, 최신순 정렬, 태그 집계
-  components/        # Header, Footer, PostList, TagBadge 등
-  layouts/BlogPost.astro
-  pages/             # 홈, /blog, /tags, /about, /rss.xml
+  data/sections.ts      # 섹션 정의 (key = 디렉터리 = URL). 여기만 고치면 사이드바·홈·검증이 따라온다
+  data/resume.ts        # 홈(이력서) 내용. 이 파일만 고치면 홈이 바뀐다
+  content/posts/        # 글. project/ study/ cert/ paper/ 하위에 둔다
+  content.config.ts     # frontmatter 스키마
+  components/Sidebar.astro  # 좌측 고정 네비 (모바일에서는 드로어)
+  components/Header.astro   # 모바일 전용 상단 바
+  layouts/              # Layout(공통 셸) / PostLayout
+  pages/
+    index.astro             # 홈 = 이력서
+    [section]/index.astro   # 섹션별 글 목록  → /study/
+    [...slug]/index.astro   # 글 본문          → /study/hydration/
+    tags/ archives/ search/
+  styles/theme.css      # 색 토큰 (라이트/다크)
 .github/workflows/deploy.yml  # main 푸시 시 자동 배포
 ```
+
+### 섹션
+
+| 섹션 | 디렉터리 / URL | 담는 것 |
+| --- | --- | --- |
+| 프로젝트 | `project` | 만들면서 부딪힌 것들. 왜 그렇게 만들었는지까지 |
+| Study | `study` | 공부 기록, Claude와의 대화에서 건진 인사이트 |
+| 자격증 | `cert` | 준비 과정, 정리한 개념, 시험 후기 |
+| 논문 | `paper` | 읽은 논문을 내 말로 다시 정리한 기록 |
+
+섹션을 추가·수정하려면 `src/data/sections.ts` 한 곳만 고치고 디렉터리를 만든다.
+사이드바 카운트, 홈 카드, `blog.mjs` 검증이 모두 이 파일을 읽는다.
+
+### 알아둘 것
+
+- **초안은 로컬에서만 보인다.** `draft: true` 인 글은 `npm run dev` 에서 보이고 배포 빌드에서 빠진다.
+- **동적 OG 이미지는 꺼져 있다.** satori 가 쓰는 폰트를 한글로 바꾸면 Google 폰트의 한글
+  서브셋이 100여 개 파일로 쪼개져 있어 글리프 커버리지를 못 채운다. 대신 `public/default-og.png`
+  정적 카드를 쓴다. 나중에 한글 서브셋 폰트 파일을 하나 넣으면 `features.dynamicOgImage` 를
+  다시 켤 수 있다.
+- **검색은 pagefind.** 빌드 시 `dist/pagefind` 를 만들어 `public/` 으로 복사한다.
+  이 디렉터리는 `.gitignore` 에 있다.
 
 `CLAUDE.md` 는 이 파일(`AGENTS.md`)로 향하는 심볼릭 링크다. 내용은 여기서 고친다.
 
@@ -119,7 +148,11 @@ src/
 
 ## 문서
 
-Astro 공식 문서: https://docs.astro.build
-- [콘텐츠 컬렉션](https://docs.astro.build/en/guides/content-collections/)
-- [라우팅](https://docs.astro.build/en/guides/routing/)
-- [Markdown 작성](https://docs.astro.build/en/guides/markdown-content/)
+- [AstroPaper README](https://github.com/satnaing/astro-paper#readme) — 테마 원본. 설정 항목 설명이 여기 있다
+- [Astro 콘텐츠 컬렉션](https://docs.astro.build/en/guides/content-collections/)
+- [Astro 라우팅](https://docs.astro.build/en/guides/routing/)
+- [Tailwind CSS v4](https://tailwindcss.com/docs) — `@utility` 로 유틸리티를 정의한다.
+  Astro 의 scoped `<style>` 안에서는 `@apply` 가 동작하지 않으므로 공용 유틸리티는
+  `src/styles/global.css` 에 둔다.
+
+테마 원본 라이선스는 `LICENSE-astro-paper` 에 있다.
