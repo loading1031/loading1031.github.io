@@ -116,6 +116,135 @@
     }
   }
 
+  /* ===== mermaid 다이어그램 =====
+     빌드 타임에 SVG 로 구워지므로 색이 고정돼 있다. 테마를 따라가도록 CSS 로 덮어쓴다. */
+  .app-prose svg[aria-roledescription] {
+    @apply border-border bg-surface my-8 h-auto max-w-full rounded-lg border p-4;
+
+    .node rect,
+    .node polygon,
+    .node circle,
+    .cluster rect {
+      fill: var(--background) !important;
+      stroke: var(--border) !important;
+    }
+    .cluster rect {
+      fill: color-mix(in srgb, var(--muted) 55%, transparent) !important;
+    }
+    .nodeLabel,
+    .edgeLabel,
+    .cluster-label,
+    .label,
+    text {
+      color: var(--foreground) !important;
+      fill: var(--foreground) !important;
+    }
+    /* 엣지 라벨은 foreignObject 안의 div.labelBkg 가 배경을 그린다 */
+    .labelBkg,
+    .edgeLabel .labelBkg {
+      background: var(--surface) !important;
+    }
+    span.edgeLabel,
+    span.edgeLabel p,
+    span.nodeLabel,
+    span.nodeLabel p,
+    .cluster-label p {
+      color: var(--foreground) !important;
+      background: transparent !important;
+      /* <br> 대신 줄바꿈 문자를 쓴다. rehypeMermaidLineBreaks 참고 */
+      white-space: pre-line !important;
+    }
+    .edgePath path,
+    .flowchart-link {
+      stroke: var(--muted-foreground) !important;
+    }
+    marker path,
+    .marker {
+      fill: var(--muted-foreground) !important;
+      stroke: var(--muted-foreground) !important;
+    }
+  }
+
+  /* ===== 본문 다이어그램 (인라인 SVG) =====
+     라이브러리 없이 SVG 를 직접 그린다. 색은 테마 토큰을 쓰므로
+     라이트/다크가 자동으로 따라온다. 좁은 화면에서는 가로 스크롤. */
+  .app-prose figure.diagram {
+    @apply border-border bg-surface my-8 overflow-x-auto rounded-lg border p-4 sm:p-5;
+  }
+
+  .app-prose figure.diagram svg {
+    @apply mx-auto block h-auto w-full;
+    min-width: 34rem;
+  }
+
+  .app-prose figure.diagram figcaption {
+    @apply text-muted-foreground mt-3 text-center text-sm;
+  }
+
+  /* 다이어그램 안에서 반복되는 요소들 */
+  .app-prose figure.diagram {
+    .d-box {
+      fill: var(--background);
+      stroke: var(--border);
+      stroke-width: 1.5;
+    }
+    .d-box-accent {
+      fill: color-mix(in srgb, var(--accent) 10%, var(--background));
+      stroke: var(--accent);
+      stroke-width: 1.5;
+    }
+    .d-box-dim {
+      fill: var(--muted);
+      stroke: var(--border);
+      stroke-width: 1.5;
+      stroke-dasharray: 4 3;
+    }
+    .d-title {
+      fill: var(--foreground);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .d-text {
+      fill: var(--foreground);
+      font-size: 12.5px;
+    }
+    .d-muted {
+      fill: var(--muted-foreground);
+      font-size: 12px;
+    }
+    .d-accent {
+      fill: var(--accent);
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+    .d-mono {
+      fill: var(--foreground);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+    }
+    .d-mono-muted {
+      fill: var(--muted-foreground);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+    }
+    .d-line {
+      stroke: var(--muted-foreground);
+      stroke-width: 1.5;
+      fill: none;
+    }
+    .d-line-accent {
+      stroke: var(--accent);
+      stroke-width: 2;
+      fill: none;
+    }
+    .d-arrow {
+      fill: var(--muted-foreground);
+    }
+    .d-arrow-accent {
+      fill: var(--accent);
+    }
+  }
+
   /* ===== Code Blocks & Syntax Highlighting ===== */
   .astro-code {
     @apply outline-border flex border bg-(--shiki-light-bg) text-(--shiki-light) [&_span]:text-(--shiki-light);

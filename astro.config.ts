@@ -11,6 +11,8 @@ import { unified } from "@astrojs/markdown-remark";
 import remarkToc from "remark-toc";
 import remarkCollapse from "remark-collapse";
 import rehypeCallouts from "rehype-callouts";
+import rehypeMermaid from "rehype-mermaid";
+import { rehypeMermaidLineBreaks } from "./src/utils/rehypeMermaidLineBreaks";
 import {
   transformerNotationDiff,
   transformerNotationHighlight,
@@ -41,8 +43,30 @@ export default defineConfig({
         remarkToc,
         [remarkCollapse, { test: "Table of contents" }],
       ],
-      rehypePlugins: [rehypeCallouts],
+      rehypePlugins: [
+        rehypeCallouts,
+        // ```mermaid 블록을 빌드 타임에 SVG 로 렌더한다 (클라이언트 JS 0).
+        // 색은 CSS 로 덮어쓰므로 여기서는 중립 테마로 뽑는다. src/styles/typography.css 참고.
+        [
+          rehypeMermaid,
+          {
+            strategy: "inline-svg",
+            mermaidConfig: {
+              theme: "base",
+              // 빌드 시점에 텍스트 폭을 재는 폰트와 실제 렌더 폰트가 달라지면
+              // 한글 라벨이 박스를 넘친다. 양쪽을 같은 스택으로 고정한다.
+              fontFamily: "'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif",
+              themeVariables: { fontSize: "14px" },
+            },
+          },
+        ],
+        // rehype-mermaid 다음에 돌아야 한다 (그 결과 SVG 를 손본다)
+        rehypeMermaidLineBreaks,
+      ],
     }),
+    // mermaid 는 Shiki 가 코드로 하이라이팅하지 않게 빼둔다.
+    // 그래야 rehype-mermaid 가 그 블록을 받아 SVG 로 바꾼다.
+    syntaxHighlight: { type: "shiki", excludeLangs: ["mermaid"] },
     shikiConfig: {
       themes: { light: "min-light", dark: "night-owl" },
       defaultColor: false,

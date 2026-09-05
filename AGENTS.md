@@ -102,6 +102,39 @@ B 글을 쓰면, A 의 내용이 B 에 섞여 들어간다. 사실관계가 어�
 **`/blog-publish`** — `doctor --build` 로 계정·frontmatter·빌드를 점검하고, draft 를 내리고,
 커밋·푸시하고, Actions 배포를 지켜본 뒤 실제 URL 이 뜨는지 확인한다.
 
+### 다이어그램은 mermaid 로 (글마다 최소 하나)
+
+블로그는 보여주는 매체다. **구조·흐름·비교가 나오는 글에는 그림이 들어간다.**
+표와 코드블록만으로 끝나는 글은 아직 덜 된 것으로 본다.
+
+` ```mermaid ` 코드펜스를 쓰면 빌드 시점에 SVG 로 구워진다. 클라이언트 JS 는 0이고
+색은 CSS 가 테마에 맞춰 덮어쓴다.
+
+````markdown
+```mermaid
+flowchart LR
+  A["보내는 쪽<br>두 줄까지는 편하다"] -- "라벨" --> B["받는 쪽"]
+```
+````
+
+지켜야 할 것:
+
+- **라벨 줄바꿈은 `<br>`.** 백틱 마크다운 문자열도 되지만 `<br>` 로 통일한다.
+- **`(`, `)` 가 들어가면 라벨을 반드시 `"` 로 감싼다.** 안 그러면 파싱이 깨진다.
+- 노드 안에는 짧게. 설명은 본문에 쓴다.
+- 그리기 어려운 배치(메모리/디스크 구조 같은 것)는 인라인 SVG 로 직접 그려도 된다.
+  단 **raw HTML 블록 안에는 빈 줄을 넣지 않는다** — 마크다운이 거기서 블록을 끊어버린다.
+  스타일 클래스는 `typography.css` 의 `figure.diagram` 참고.
+
+관련해서 알아둘 것:
+
+- 빌드에 **헤드리스 브라우저가 필요하다** (`rehype-mermaid` → Playwright).
+  `package.json` 의 `prebuild` 가 chromium 을 보장하고, CI 는 한글 폰트를 따로 설치한다.
+  한글 라벨 폭을 빌드 시점에 재기 때문에 폰트가 없으면 박스 크기가 어긋난다.
+- `foreignObject` 안의 `<br>` 이 `<br></br>` 로 직렬화되면서 줄바꿈이 두 번 먹혀
+  라벨이 잘리는 문제가 있었다. `src/utils/rehypeMermaidLineBreaks.ts` 가 이를 고친다.
+  같이 짝이 되는 CSS 는 `typography.css` 의 `white-space: pre-line`.
+
 ### 손으로 쓸 때
 
 `src/content/posts/_post-template.md` 를 복사해 `src/content/posts/<섹션>/<슬러그>.md` 로 만든다.

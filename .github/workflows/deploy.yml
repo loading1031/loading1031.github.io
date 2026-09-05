@@ -21,6 +21,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      # 본문 다이어그램은 rehype-mermaid 가 빌드 시점에 헤드리스 브라우저로 렌더한다.
+      # 그때 한글 라벨의 폭을 재므로, 러너에 한글 폰트가 없으면 박스 크기가 어긋난다.
+      # (브라우저 자체는 package.json 의 prebuild 스크립트가 설치한다.)
+      - name: Install Korean fonts for diagram rendering
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-noto-cjk
       - name: Build
         # v6 부터 Node 24 기반 액션을 쓰고 빌드 캐시를 지원한다.
         uses: withastro/action@v6
