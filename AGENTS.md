@@ -202,6 +202,12 @@ src/
 
 ### 알아둘 것
 
+- **제목 번호는 손으로 적지 않는다.** `typography.css` 의 CSS 카운터가 h2 는 `1. 2. 3.`,
+  h3 는 `1.1 1.2` 로 매긴다. 절 순서를 바꿔도 번호가 알아서 따라온다.
+  사이드바 목차(`TableOfContents.astro`)도 같은 규칙으로 세므로 둘이 어긋나지 않는다.
+- **글 페이지에는 사이드바에 목차가 생긴다.** `render()` 가 준 `headings` 를
+  글 페이지 → `PostLayout` → `Layout` → `Sidebar` 로 넘기면 된다. 현재 읽는 절은
+  IntersectionObserver 로 표시한다. h2·h3 만 목차에 넣는다(h4 이하는 뺀다).
 - **초안은 로컬에서만 보인다.** `draft: true` 인 글은 `npm run dev` 에서 보이고 배포 빌드에서 빠진다.
 - **동적 OG 이미지는 꺼져 있다.** satori 가 쓰는 폰트를 한글로 바꾸면 Google 폰트의 한글
   서브셋이 100여 개 파일로 쪼개져 있어 글리프 커버리지를 못 채운다. 대신 `public/default-og.png`

@@ -1,0 +1,118 @@
+---
+/**
+ * 글 목차. 사이드바 안에 들어간다.
+ *
+ * 번호는 본문 제목과 같은 규칙으로 센다 (h2 는 1, 2, 3… / h3 는 1.1, 1.2…).
+ * 본문 쪽 번호는 typography.css 의 CSS 카운터가 매긴다. 둘이 어긋나지 않게
+ * 같은 대상(h2, h3)만 세는 것이 중요하다.
+ */
+import type { MarkdownHeading } from "astro";
+
+type Props = { headings: MarkdownHeading[] };
+
+const { headings } = Astro.props;
+
+let h2 = 0;
+let h3 = 0;
+const items = headings
+  .filter(h => h.depth === 2 || h.depth === 3)
+  .map(h => {
+    if (h.depth === 2) {
+      h2 += 1;
+      h3 = 0;
+      return { ...h, number: `${h2}.` };
+    }
+    h3 += 1;
+    return { ...h, number: `${h2}.${h3}` };
+  });
+---
+
+{
+  items.length > 1 && (
+    <nav class="border-border border-t px-3 py-4" aria-labelledby="toc-heading">
+      <div
+        id="toc-heading"
+        class="text-muted-foreground mb-1 px-3 text-xs font-medium tracking-wider uppercase"
+      >
+        이 글의 목차
+      </div>
+      <ul id="toc-list" class="text-sm">
+        {items.map(item => (
+          <li>
+            <a
+              href={`#${item.slug}`}
+              data-toc-link={item.slug}
+              class:list={[
+                "toc-item",
+                { "toc-item-sub": item.depth === 3 },
+              ]}
+            >
+              <span class="text-muted-foreground shrink-0 tabular-nums">
+                {item.number}
+              </span>
+              <span class="line-clamp-2">{item.text}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+<script>
+  /**
+   * 지금 읽고 있는 절을 목차에서 표시한다.
+   * 화면에 걸친 제목 중 가장 위의 것을 현재 위치로 본다.
+   */
+  function setupToc() {
+    const links = document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]");
+    if (links.length === 0) return;
+
+    const bySlug = new Map<string, HTMLAnchorElement>();
+    links.forEach(a => bySlug.set(a.dataset.tocLink!, a));
+
+    const targets = [...bySlug.keys()]
+      .map(slug => document.getElementById(slug))
+      .filter((el): el is HTMLElement => el !== null);
+    if (targets.length === 0) return;
+
+    const visible = new Set<string>();
+
+    const mark = () => {
+      let current: string | undefined;
+      for (const el of targets) {
+        if (visible.has(el.id)) {
+          current = el.id;
+          break;
+        }
+      }
+      // 아무 제목도 화면에 없으면, 화면 위쪽을 지나간 마지막 제목을 쓴다
+      if (!current) {
+        for (const el of targets) {
+          if (el.getBoundingClientRect().top < 120) current = el.id;
+        }
+      }
+      bySlug.forEach((a, slug) =>
+        a.classList.toggle("toc-item-active", slug === current)
+      );
+      const active = current ? bySlug.get(current) : undefined;
+      active?.scrollIntoView({ block: "nearest" });
+    };
+
+    const observer = new IntersectionObserver(
+      entries => {
+        for (const e of entries) {
+          if (e.isIntersecting) visible.add(e.target.id);
+          else visible.delete(e.target.id);
+        }
+        mark();
+      },
+      { rootMargin: "-100px 0px -70% 0px" }
+    );
+    targets.forEach(el => observer.observe(el));
+    mark();
+  }
+
+  setupToc();
+  document.addEventListener("astro:after-swap", setupToc);
+</script>

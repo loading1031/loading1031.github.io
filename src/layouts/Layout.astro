@@ -13,6 +13,8 @@ type Props = {
   description?: string;
   ogImage?: string;
   canonicalURL?: string;
+  /** 글 페이지에서만 넘긴다. 사이드바에 목차가 생긴다. */
+  headings?: import("astro").MarkdownHeading[];
 };
 
 const { site } = config;
@@ -22,6 +24,7 @@ const {
   description = site.description,
   ogImage = resolveDefaultOgImagePath(config),
   canonicalURL = new URL(Astro.url.pathname, Astro.site).href,
+  headings,
 } = Astro.props;
 
 const socialImageURL = new URL(ogImage, Astro.site ?? Astro.url);
@@ -120,7 +123,7 @@ const rssHref = getRelativeLocaleUrl(
   <body
     class="bg-background font-app text-foreground selection:bg-accent/75 selection:text-accent-foreground"
   >
-    <Sidebar />
+    <Sidebar {headings} />
     <!-- 사이드바는 fixed 라 흐름에서 빠져 있다. 본문은 lg 이상에서만 밀어준다. -->
     <div class="flex min-h-svh flex-col lg:ps-64">
       <slot />

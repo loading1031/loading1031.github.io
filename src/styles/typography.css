@@ -23,6 +23,27 @@
       @apply border-border mt-10 border-b pb-2;
     }
 
+    /* 제목 번호. 손으로 적지 않고 CSS 카운터로 매긴다.
+       절 순서를 바꿔도 번호가 알아서 따라온다.
+       목차(TableOfContents.astro)도 같은 방식으로 센다. */
+    counter-reset: h2counter;
+
+    h2 {
+      counter-reset: h3counter;
+    }
+
+    h2::before {
+      counter-increment: h2counter;
+      content: counter(h2counter) ". ";
+      @apply text-muted-foreground font-normal;
+    }
+
+    h3::before {
+      counter-increment: h3counter;
+      content: counter(h2counter) "." counter(h3counter) " ";
+      @apply text-muted-foreground font-normal;
+    }
+
     p,
     strong,
     ol,

@@ -59,6 +59,22 @@
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
+/* 사이드바 목차 항목 */
+@utility toc-item {
+  @apply flex gap-2 rounded-md px-3 py-1.5 leading-snug transition-colors;
+  &:hover {
+    @apply bg-muted text-accent;
+  }
+}
+
+@utility toc-item-sub {
+  @apply ps-7 text-[13px];
+}
+
+@utility toc-item-active {
+  @apply text-accent font-medium;
+}
+
 /* 이력서 홈의 섹션 제목 */
 @utility section-heading {
   @apply border-border mb-5 border-b pb-2 text-sm font-semibold tracking-wider uppercase;

@@ -6,14 +6,20 @@ import IconHash from "@/assets/icons/IconHash.svg";
 import IconSearch from "@/assets/icons/IconSearch.svg";
 import IconRss from "@/assets/icons/IconRss.svg";
 import IconX from "@/assets/icons/IconX.svg";
+import type { MarkdownHeading } from "astro";
 import Socials from "./Socials.astro";
 import ThemeToggle from "./ThemeToggle.astro";
+import TableOfContents from "./TableOfContents.astro";
 import { SECTIONS, isUnderSection, sectionPathOf } from "@/data/sections";
 import { profile } from "@/data/resume";
 import { postFilter } from "@/utils/postFilter";
 import { stripBase, stripLocale } from "@/utils/withBase";
 import { useTranslations } from "@/i18n";
 import config from "@/config";
+
+type Props = { headings?: MarkdownHeading[] };
+
+const { headings } = Astro.props;
 
 const { site, features } = config;
 
@@ -100,7 +106,7 @@ const initials = profile.name.slice(0, 2);
   </div>
 
   <!-- 섹션 네비게이션 -->
-  <nav class="flex-1 px-3 py-5" aria-label={t.nav.posts}>
+  <nav class="px-3 py-5" aria-label={t.nav.posts}>
     <a
       href={getRelativeLocaleUrl(locale, "")}
       class:list={[
@@ -190,6 +196,10 @@ const initials = profile.name.slice(0, 2);
       )
     }
   </nav>
+
+  {headings && headings.length > 0 && <TableOfContents {headings} />}
+
+  <div class="flex-1"></div>
 
   <!-- 하단: 테마 전환 + RSS -->
   <div
