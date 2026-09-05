@@ -101,6 +101,9 @@ B 글을 쓰면, A 의 내용이 B 에 섞여 들어간다. 사실관계가 어�
 **`/blog-diagram`** — 그림이 필요할 때 위 두 스킬이 불러 쓰는 참조 스킬.
 무엇을 그릴지 고르는 기준, mermaid 문법, 이 레포에서 실제로 깨졌던 함정, 렌더 확인 방법.
 
+**`/blog-terms`** — 독자가 모를 용어에 한 줄 설명 툴팁을 달고, 긴 설명은 보충 개념 절로
+연결한다. `<abbr title="...">` 은 툴팁만, `[용어](#앵커 "설명")` 은 툴팁 + 클릭 이동.
+
 **`/blog-refine`** — 맥락 없는 독자의 눈으로 재검토. AI 말투 제거, 결론 앞으로 끌어내기,
 코드 실행 검증, 링크 확인, 보안 재확인. `draft` 는 그대로 둔다.
 
@@ -159,7 +162,7 @@ node scripts/blog.mjs doctor --build           # 계정/frontmatter/빌드 점�
 astro-paper.config.ts   # 사이트 제목·설명·소셜·기능 토글 (여기부터 본다)
 astro.config.ts         # 통합, i18n(ko), 폰트, 마크다운 플러그인
 .claude/skills/         # blog-capture / blog-lecture — 초안 쓰기
-                        # blog-diagram — 그림 그리기 (다른 스킬에서 불러 씀)
+                        # blog-diagram / blog-terms — 그림·용어 (다른 스킬에서 불러 씀)
                         # blog-refine / blog-publish — 다듬고 발행
                         # (모두 이 레포 안에서만 동작)
 ref/                    # 참고 자료 (강의 노트, AI 대화 내보내기). gitignore 됨

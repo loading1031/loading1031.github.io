@@ -13,6 +13,7 @@ import remarkCollapse from "remark-collapse";
 import rehypeCallouts from "rehype-callouts";
 import rehypeMermaid from "rehype-mermaid";
 import { rehypeMermaidLineBreaks } from "./src/utils/rehypeMermaidLineBreaks";
+import { rehypeTermTooltips } from "./src/utils/rehypeTermTooltips";
 import {
   transformerNotationDiff,
   transformerNotationHighlight,
@@ -62,6 +63,8 @@ export default defineConfig({
         ],
         // rehype-mermaid 다음에 돌아야 한다 (그 결과 SVG 를 손본다)
         rehypeMermaidLineBreaks,
+        // 용어 툴팁: [용어](#앵커 "설명") / <abbr title="설명">용어</abbr>
+        rehypeTermTooltips,
       ],
     }),
     // mermaid 는 Shiki 가 코드로 하이라이팅하지 않게 빼둔다.

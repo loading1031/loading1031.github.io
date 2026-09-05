@@ -41,6 +41,12 @@
       @apply overflow-x-clip;
     }
 
+    /* 위 규칙이 목록 안 용어 툴팁을 가로로 잘라낸다. 툴팁이 있으면 풀어 준다. */
+    ul:has([data-tip]),
+    ol:has([data-tip]) {
+      overflow: visible;
+    }
+
     li {
       @apply marker:text-accent;
     }
@@ -113,6 +119,64 @@
 
     pre {
       @apply focus-visible:outline-accent focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-dashed;
+    }
+  }
+
+  /* ===== 용어 툴팁 =====
+     rehypeTermTooltips 가 붙인 [data-tip] 에 말풍선을 만든다.
+     JS 없이 hover / focus 로만 동작한다. */
+  .app-prose [data-tip] {
+    @apply decoration-accent/60 relative underline decoration-dotted underline-offset-4;
+    cursor: help;
+  }
+
+  .app-prose a.term-linked {
+    @apply text-foreground;
+  }
+
+  .app-prose [data-tip]::after {
+    content: attr(data-tip);
+    @apply border-border bg-background text-foreground pointer-events-none absolute
+           z-30 rounded-lg border px-3 py-2 text-sm leading-snug font-normal
+           no-underline opacity-0 shadow-lg transition-opacity duration-100;
+    inset-inline-start: 50%;
+    top: calc(100% + 0.6rem);
+    translate: -50% 0;
+    width: max-content;
+    max-width: min(22rem, 78vw);
+    white-space: normal;
+    text-align: start;
+    visibility: hidden;
+  }
+
+  /* 말풍선 꼬리 */
+  .app-prose [data-tip]::before {
+    content: "";
+    @apply border-border bg-background pointer-events-none absolute z-30
+           opacity-0 transition-opacity duration-100;
+    inset-inline-start: 50%;
+    top: calc(100% + 0.25rem);
+    translate: -50% 0;
+    width: 0.6rem;
+    height: 0.6rem;
+    rotate: 45deg;
+    border-width: 1px 0 0 1px;
+    visibility: hidden;
+  }
+
+  .app-prose [data-tip]:hover::after,
+  .app-prose [data-tip]:hover::before,
+  .app-prose [data-tip]:focus-visible::after,
+  .app-prose [data-tip]:focus-visible::before {
+    @apply opacity-100;
+    visibility: visible;
+  }
+
+  /* 터치 기기에서는 말풍선 대신 눌러서 상세로 이동한다 */
+  @media (hover: none) {
+    .app-prose [data-tip]::after,
+    .app-prose [data-tip]::before {
+      display: none;
     }
   }
 
