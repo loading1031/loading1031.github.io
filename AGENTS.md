@@ -96,6 +96,9 @@ B 글을 쓰면, A 의 내용이 B 에 섞여 들어간다. 사실관계가 어�
 (`섹션N: 주제`)이 스킬 안의 등록부에 고정돼 있고, `ref/` 자료를 재료로 읽는다.
 강의 요약이 아니라 **강의가 답을 안 준 지점과 내가 막혔던 것**을 쓰게 한다.
 
+**`/blog-diagram`** — 그림이 필요할 때 위 두 스킬이 불러 쓰는 참조 스킬.
+무엇을 그릴지 고르는 기준, mermaid 문법, 이 레포에서 실제로 깨졌던 함정, 렌더 확인 방법.
+
 **`/blog-refine`** — 맥락 없는 독자의 눈으로 재검토. AI 말투 제거, 결론 앞으로 끌어내기,
 코드 실행 검증, 링크 확인, 보안 재확인. `draft` 는 그대로 둔다.
 
@@ -110,30 +113,17 @@ B 글을 쓰면, A 의 내용이 B 에 섞여 들어간다. 사실관계가 어�
 ` ```mermaid ` 코드펜스를 쓰면 빌드 시점에 SVG 로 구워진다. 클라이언트 JS 는 0이고
 색은 CSS 가 테마에 맞춰 덮어쓴다.
 
-````markdown
-```mermaid
-flowchart LR
-  A["보내는 쪽<br>두 줄까지는 편하다"] -- "라벨" --> B["받는 쪽"]
-```
-````
+**문법·함정·확인 방법은 `/blog-diagram` 스킬에 정리돼 있다.** 그림을 그릴 때는 그걸 읽는다.
+여기서는 건드리면 안 되는 것만 적어 둔다.
 
-지켜야 할 것:
-
-- **라벨 줄바꿈은 `<br>`.** 백틱 마크다운 문자열도 되지만 `<br>` 로 통일한다.
-- **`(`, `)` 가 들어가면 라벨을 반드시 `"` 로 감싼다.** 안 그러면 파싱이 깨진다.
-- 노드 안에는 짧게. 설명은 본문에 쓴다.
-- 그리기 어려운 배치(메모리/디스크 구조 같은 것)는 인라인 SVG 로 직접 그려도 된다.
-  단 **raw HTML 블록 안에는 빈 줄을 넣지 않는다** — 마크다운이 거기서 블록을 끊어버린다.
-  스타일 클래스는 `typography.css` 의 `figure.diagram` 참고.
-
-관련해서 알아둘 것:
-
-- 빌드에 **헤드리스 브라우저가 필요하다** (`rehype-mermaid` → Playwright).
-  `package.json` 의 `prebuild` 가 chromium 을 보장하고, CI 는 한글 폰트를 따로 설치한다.
-  한글 라벨 폭을 빌드 시점에 재기 때문에 폰트가 없으면 박스 크기가 어긋난다.
-- `foreignObject` 안의 `<br>` 이 `<br></br>` 로 직렬화되면서 줄바꿈이 두 번 먹혀
-  라벨이 잘리는 문제가 있었다. `src/utils/rehypeMermaidLineBreaks.ts` 가 이를 고친다.
-  같이 짝이 되는 CSS 는 `typography.css` 의 `white-space: pre-line`.
+- `astro.config.ts` — `rehypeMermaid` 옵션, `rehypeMermaidLineBreaks`,
+  `syntaxHighlight.excludeLangs: ["mermaid"]` (Shiki 가 mermaid 를 먼저 채가지 않게)
+- `src/utils/rehypeMermaidLineBreaks.ts` — `foreignObject` 안의 `<br>` 이 `<br></br>` 로
+  직렬화되며 라벨이 잘리던 문제를 고친다. `typography.css` 의 `white-space: pre-line` 과 한 쌍
+- `src/styles/typography.css` 의 `svg[aria-roledescription]` — mermaid 가 구워 넣은 색을
+  테마 토큰으로 덮어쓴다
+- 빌드에 **헤드리스 브라우저가 필요하다.** `package.json` 의 `prebuild` 가 chromium 을
+  보장하고, CI 는 한글 라벨 폭 측정을 위해 `fonts-noto-cjk` 를 설치한다
 
 ### 손으로 쓸 때
 
@@ -166,7 +156,9 @@ node scripts/blog.mjs doctor --build           # 계정/frontmatter/빌드 점�
 ```
 astro-paper.config.ts   # 사이트 제목·설명·소셜·기능 토글 (여기부터 본다)
 astro.config.ts         # 통합, i18n(ko), 폰트, 마크다운 플러그인
-.claude/skills/         # blog-capture / blog-lecture / blog-refine / blog-publish
+.claude/skills/         # blog-capture / blog-lecture — 초안 쓰기
+                        # blog-diagram — 그림 그리기 (다른 스킬에서 불러 씀)
+                        # blog-refine / blog-publish — 다듬고 발행
                         # (모두 이 레포 안에서만 동작)
 ref/                    # 참고 자료 (강의 노트, AI 대화 내보내기). gitignore 됨
 scripts/blog.mjs        # 글 파이프라인 헬퍼 CLI
