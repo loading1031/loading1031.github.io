@@ -248,6 +248,56 @@
       fill: var(--muted-foreground) !important;
       stroke: var(--muted-foreground) !important;
     }
+
+    /* --- sequenceDiagram 은 클래스 체계가 달라서 따로 덮어쓴다 --- */
+    .actor {
+      fill: var(--background) !important;
+      stroke: var(--border) !important;
+    }
+    text.actor,
+    text.actor > tspan {
+      fill: var(--foreground) !important;
+      stroke: none !important;
+    }
+    .actor-line {
+      stroke: var(--border) !important;
+    }
+    .messageLine0,
+    .messageLine1 {
+      stroke: var(--muted-foreground) !important;
+    }
+    .messageText {
+      fill: var(--foreground) !important;
+      stroke: none !important;
+    }
+    .note {
+      fill: color-mix(in srgb, var(--accent) 12%, var(--background)) !important;
+      stroke: var(--accent) !important;
+    }
+    .noteText,
+    .noteText > tspan {
+      fill: var(--foreground) !important;
+      stroke: none !important;
+    }
+    .labelBox {
+      fill: var(--muted) !important;
+      stroke: var(--border) !important;
+    }
+    .labelText,
+    .labelText > tspan,
+    .loopText,
+    .loopText > tspan,
+    .sequenceNumber {
+      fill: var(--foreground) !important;
+    }
+    .loopLine {
+      stroke: var(--muted-foreground) !important;
+    }
+    #arrowhead path,
+    .arrowheadPath {
+      fill: var(--muted-foreground) !important;
+      stroke: var(--muted-foreground) !important;
+    }
   }
 
   /* ===== 본문 다이어그램 (인라인 SVG) =====
