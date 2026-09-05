@@ -53,6 +53,12 @@
   @apply bg-muted text-accent;
 }
 
+/* 하위 섹션: 한 단계 들여쓰고 세로선으로 묶는다 */
+@utility nav-item-child {
+  @apply border-border ms-4 border-s ps-4 text-[13px] font-normal;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
 /* 이력서 홈의 섹션 제목 */
 @utility section-heading {
   @apply border-border mb-5 border-b pb-2 text-sm font-semibold tracking-wider uppercase;

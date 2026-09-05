@@ -1,7 +1,7 @@
 ---
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { stripBase, stripLocale } from "@/utils/withBase";
-import { SECTIONS } from "@/data/sections";
+import { ALL_SECTIONS } from "@/data/sections";
 import { useTranslations } from "@/i18n";
 import config from "@/config";
 
@@ -31,7 +31,7 @@ const navLabels: Record<string, string> = {
   about: t.nav.about,
   archives: t.nav.archives,
   search: t.nav.search,
-  ...Object.fromEntries(SECTIONS.map(s => [s.key, s.label])),
+  ...Object.fromEntries(ALL_SECTIONS.map(s => [s.key, s.label])),
 };
 
 // if breadcrumb is Home > Tags > [tag] > [page] <etc>

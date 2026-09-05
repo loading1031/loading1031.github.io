@@ -8,7 +8,7 @@ import IconRss from "@/assets/icons/IconRss.svg";
 import IconX from "@/assets/icons/IconX.svg";
 import Socials from "./Socials.astro";
 import ThemeToggle from "./ThemeToggle.astro";
-import { SECTIONS, sectionOf } from "@/data/sections";
+import { SECTIONS, isUnderSection, sectionPathOf } from "@/data/sections";
 import { profile } from "@/data/resume";
 import { postFilter } from "@/utils/postFilter";
 import { stripBase, stripLocale } from "@/utils/withBase";
@@ -20,13 +20,12 @@ const { site, features } = config;
 const locale = Astro.currentLocale ?? site.lang;
 const t = useTranslations(locale);
 
-// 섹션별 글 개수
+// 섹션별 글 개수. 최상위 섹션은 하위 섹션 글까지 합쳐서 센다.
 const posts = (await getCollection("posts")).filter(postFilter);
-const countBySection = new Map<string, number>();
-for (const post of posts) {
-  const key = sectionOf(post.id);
-  countBySection.set(key, (countBySection.get(key) ?? 0) + 1);
-}
+const countFor = (path: string) =>
+  posts.filter(
+    post => sectionPathOf(post.id) === path || isUnderSection(post.id, path)
+  ).length;
 
 // base/locale 접두사를 벗겨서 현재 경로를 비교한다.
 const relativePath = stripBase(Astro.url.pathname);
@@ -119,19 +118,39 @@ const initials = profile.name.slice(0, 2);
     </div>
     {
       SECTIONS.map(section => (
-        <a
-          href={getRelativeLocaleUrl(locale, section.key)}
-          class:list={[
-            "nav-item",
-            { "nav-item-active": isActive(`/${section.key}`) },
-          ]}
-          aria-current={isActive(`/${section.key}`) ? "page" : undefined}
-        >
-          {section.label}
-          <span class="text-muted-foreground ms-auto text-xs tabular-nums">
-            {countBySection.get(section.key) ?? 0}
-          </span>
-        </a>
+        <>
+          <a
+            href={getRelativeLocaleUrl(locale, section.key)}
+            class:list={[
+              "nav-item",
+              { "nav-item-active": currentPath === `/${section.key}` },
+            ]}
+            aria-current={currentPath === `/${section.key}` ? "page" : undefined}
+          >
+            {section.label}
+            <span class="text-muted-foreground ms-auto text-xs tabular-nums">
+              {countFor(section.key)}
+            </span>
+          </a>
+          {section.children?.map(child => {
+            const path = `${section.key}/${child.key}`;
+            return (
+              <a
+                href={getRelativeLocaleUrl(locale, path)}
+                class:list={[
+                  "nav-item nav-item-child",
+                  { "nav-item-active": isActive(`/${path}`) },
+                ]}
+                aria-current={isActive(`/${path}`) ? "page" : undefined}
+              >
+                {child.label}
+                <span class="text-muted-foreground ms-auto text-xs tabular-nums">
+                  {countFor(path)}
+                </span>
+              </a>
+            );
+          })}
+        </>
       ))
     }
 

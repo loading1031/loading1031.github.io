@@ -19,15 +19,31 @@ const EXPECTED_OWNER = "loading1031";
 
 /**
  * 섹션 정의는 src/data/sections.ts 한 곳에만 둔다.
- * 여기서는 그 파일을 읽어 key/label 만 뽑아 쓴다 (사이트와 어긋나지 않도록).
+ * 여기서는 그 파일을 TS 없이 읽어야 하므로, 들여쓰기 깊이로 상/하위를 판별한다.
+ * (children 배열이 한 단계 더 들여쓰여 있다는 이 파일의 형식에 의존한다.)
  */
 function loadSections() {
   const source = fs.readFileSync(SECTIONS_FILE, "utf-8");
+  const body = source.slice(source.indexOf("export const SECTIONS"));
+  const re = /^(\s*)key: "([^"]+)",\n\s*label: "([^"]+)"/gm;
   const sections = [];
-  const re = /key:\s*"([^"]+)",\s*\n\s*label:\s*"([^"]+)"/g;
+  let baseIndent = null;
+  let currentTop = null;
   let match;
-  while ((match = re.exec(source)) !== null) {
-    sections.push({ key: match[1], label: match[2] });
+  while ((match = re.exec(body)) !== null) {
+    const [, indent, key, label] = match;
+    if (baseIndent === null) baseIndent = indent.length;
+    if (indent.length <= baseIndent) {
+      currentTop = { key, label, path: key, parent: null };
+      sections.push(currentTop);
+    } else {
+      sections.push({
+        key,
+        label,
+        path: `${currentTop.key}/${key}`,
+        parent: currentTop.key,
+      });
+    }
   }
   if (sections.length === 0) {
     fail("src/data/sections.ts 에서 섹션을 읽지 못했다. 파일 형식을 확인할 것.");
@@ -36,17 +52,18 @@ function loadSections() {
 }
 
 const SECTIONS = loadSections();
-const SECTION_KEYS = SECTIONS.map(s => s.key);
+const SECTION_PATHS = SECTIONS.map(s => s.path);
 
 const USAGE = `블로그 글 파이프라인 헬퍼
 
-  node scripts/blog.mjs new --section study --title "제목" --slug my-post [--description "..."] [--tags a,b] [--body-file -]
-  node scripts/blog.mjs list [--drafts] [--section study]   글 목록
-  node scripts/blog.mjs show <섹션/슬러그>                    글 원문 출력
-  node scripts/blog.mjs ready <섹션/슬러그>                   draft 를 내려 배포 대상으로 전환
+  node scripts/blog.mjs new --section study/database --title "제목" --slug my-post [--description "..."] [--tags a,b] [--body-file -]
+  node scripts/blog.mjs list [--drafts] [--section study]   글 목록 (하위 섹션 포함)
+  node scripts/blog.mjs show <경로/슬러그>                    글 원문 출력
+  node scripts/blog.mjs ready <경로/슬러그>                   draft 를 내려 배포 대상으로 전환
   node scripts/blog.mjs doctor [--build]                    계정/frontmatter/빌드 점검
 
-섹션: ${SECTIONS.map(s => `${s.key} (${s.label})`).join(" | ")}`;
+섹션:
+${SECTIONS.map(s => `  ${s.path.padEnd(18)} ${s.label}`).join("\n")}`;
 
 // ---------- 인자 파싱 ----------
 
@@ -144,36 +161,36 @@ function nowInSeoul() {
 
 function listPosts() {
   const posts = [];
-  for (const section of SECTION_KEYS) {
-    const dir = path.join(POSTS_DIR, section);
-    if (!fs.existsSync(dir)) continue;
-    for (const file of fs.readdirSync(dir)) {
-      if (!/\.(md|mdx)$/.test(file) || file.startsWith("_")) continue;
-      const filePath = path.join(dir, file);
-      const parsed = parseFrontmatter(fs.readFileSync(filePath, "utf-8"));
-      posts.push({
-        section,
-        file,
-        filePath,
-        slug: file.replace(/\.(md|mdx)$/, ""),
-        id: `${section}/${file.replace(/\.(md|mdx)$/, "")}`,
-        ...(parsed ?? { data: null, body: "" }),
-      });
-    }
-  }
-  // 섹션 디렉터리 밖에 있는 글도 찾아서 알려준다 (라우팅이 안 된다)
-  for (const file of fs.readdirSync(POSTS_DIR)) {
-    if (!/\.(md|mdx)$/.test(file) || file.startsWith("_")) continue;
+
+  /** 글 파일 하나를 읽어 목록 항목으로 만든다. section 이 null 이면 정의되지 않은 위치. */
+  const read = (filePath, sectionPath) => {
+    const file = path.basename(filePath);
+    const slug = file.replace(/\.(md|mdx)$/, "");
+    const parsed = parseFrontmatter(fs.readFileSync(filePath, "utf-8"));
     posts.push({
-      section: null,
+      section: sectionPath,
       file,
-      filePath: path.join(POSTS_DIR, file),
-      slug: file.replace(/\.(md|mdx)$/, ""),
-      id: file.replace(/\.(md|mdx)$/, ""),
-      data: null,
-      body: "",
+      filePath,
+      slug,
+      id: sectionPath ? `${sectionPath}/${slug}` : slug,
+      ...(parsed ?? { data: null, body: "" }),
     });
-  }
+  };
+
+  /** POSTS_DIR 아래를 훑으면서, 정의된 섹션 경로에 놓인 글만 제자리로 인정한다. */
+  const walk = (dir, relPath) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith("_")) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full, relPath ? `${relPath}/${entry.name}` : entry.name);
+      } else if (/\.(md|mdx)$/.test(entry.name)) {
+        read(full, SECTION_PATHS.includes(relPath) ? relPath : null);
+      }
+    }
+  };
+  walk(POSTS_DIR, "");
+
   return posts.sort((a, b) =>
     String(b.data?.pubDatetime ?? "").localeCompare(String(a.data?.pubDatetime ?? ""))
   );
@@ -194,8 +211,8 @@ function git(args) {
 
 function cmdNew(flags) {
   const section = typeof flags.section === "string" ? flags.section : "";
-  if (!SECTION_KEYS.includes(section)) {
-    fail(`--section 이 필요하다. 사용 가능: ${SECTION_KEYS.join(", ")}`);
+  if (!SECTION_PATHS.includes(section)) {
+    fail(`--section 이 필요하다. 사용 가능: ${SECTION_PATHS.join(", ")}`);
   }
 
   const title = flags.title;
@@ -251,7 +268,10 @@ function cmdList(flags) {
   let posts = listPosts();
   if (flags.drafts) posts = posts.filter(p => p.data?.draft === true);
   if (typeof flags.section === "string") {
-    posts = posts.filter(p => p.section === flags.section);
+    const want = flags.section;
+    posts = posts.filter(
+      p => p.section === want || String(p.section).startsWith(`${want}/`)
+    );
   }
   if (posts.length === 0) {
     console.log(flags.drafts ? "초안 없음." : "글 없음.");
@@ -332,7 +352,9 @@ function cmdDoctor(flags) {
   const problems = [];
   for (const post of posts) {
     if (post.section === null) {
-      problems.push(`${post.file}: 섹션 디렉터리 밖에 있다 (${SECTION_KEYS.join("/")} 중 하나로 옮길 것)`);
+      problems.push(
+        `${post.file}: 정의되지 않은 위치에 있다 (${SECTION_PATHS.join(", ")} 중 하나로 옮기거나 src/data/sections.ts 에 섹션을 추가할 것)`
+      );
       continue;
     }
     if (!post.data) {
@@ -357,10 +379,11 @@ function cmdDoctor(flags) {
   if (problems.length > 0) failed++;
 
   for (const section of SECTIONS) {
-    const inSection = posts.filter(p => p.section === section.key);
+    const inSection = posts.filter(p => p.section === section.path);
     const drafts = inSection.filter(p => p.data?.draft === true).length;
+    const indent = section.parent ? "   └ " : "· ";
     console.log(
-      `· ${section.label.padEnd(6)} 공개 ${inSection.length - drafts}, 초안 ${drafts}`
+      `${indent}${section.path.padEnd(18)} 공개 ${inSection.length - drafts}, 초안 ${drafts}`
     );
   }
 

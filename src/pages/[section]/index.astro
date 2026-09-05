@@ -3,29 +3,42 @@ import type { GetStaticPaths } from "astro";
 import { getCollection } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
-import Main from "@/components/Main.astro";
-import Card from "@/components/Card.astro";
 import Footer from "@/components/Footer.astro";
+import SectionIndex from "@/components/SectionIndex.astro";
 import { getSortedPosts } from "@/utils/getSortedPosts";
-import { SECTIONS, sectionOf, type Section } from "@/data/sections";
+import {
+  SECTIONS,
+  flattenSections,
+  isUnderSection,
+  sectionPathOf,
+  type FlatSection,
+} from "@/data/sections";
 import config from "@/config";
 
 export const getStaticPaths = (async () => {
-  const posts = await getCollection("posts");
-  const sorted = getSortedPosts(posts);
+  const sorted = getSortedPosts(await getCollection("posts"));
 
-  return SECTIONS.map(section => ({
-    params: { section: section.key },
-    props: {
-      section,
-      posts: sorted.filter(post => sectionOf(post.id) === section.key),
-    },
-  }));
+  return SECTIONS.map(section => {
+    const path = section.key;
+    const children = flattenSections(section.children ?? [], path).map(child => ({
+      section: child,
+      count: sorted.filter(post => sectionPathOf(post.id) === child.path).length,
+    }));
+
+    return {
+      params: { section: path },
+      props: {
+        section: { ...section, path } as FlatSection,
+        // 이 섹션에 바로 놓인 글만. 하위 섹션 글은 하위 페이지에서 보여준다.
+        posts: sorted.filter(post => sectionPathOf(post.id) === path),
+        children,
+        total: sorted.filter(post => isUnderSection(post.id, path)).length,
+      },
+    };
+  });
 }) satisfies GetStaticPaths;
 
-type Props = { section: Section; posts: Awaited<ReturnType<typeof getSortedPosts>> };
-
-const { section, posts } = Astro.props;
+const { section, posts, children } = Astro.props;
 ---
 
 <Layout
@@ -33,20 +46,6 @@ const { section, posts } = Astro.props;
   description={section.description}
 >
   <Header />
-
-  <Main pageTitle={section.label} pageDesc={section.description} class="mt-8">
-    {
-      posts.length === 0 ? (
-        <p class="text-muted-foreground">아직 이 섹션에 쓴 글이 없습니다.</p>
-      ) : (
-        <ul>
-          {posts.map(data => (
-            <Card {...data} />
-          ))}
-        </ul>
-      )
-    }
-  </Main>
-
+  <SectionIndex {section} {posts} {children} />
   <Footer />
 </Layout>

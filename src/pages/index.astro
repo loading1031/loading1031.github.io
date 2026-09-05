@@ -8,7 +8,7 @@ import Footer from "@/components/Footer.astro";
 import Datetime from "@/components/Datetime.astro";
 import { getSortedPosts } from "@/utils/getSortedPosts";
 import { getPostUrl } from "@/utils/getPostPaths";
-import { SECTIONS, sectionOf, getSection } from "@/data/sections";
+import { SECTIONS, isUnderSection, sectionOf, sectionPathOf } from "@/data/sections";
 import {
   profile,
   summary,
@@ -67,7 +67,9 @@ const homePath = getRelativeLocaleUrl(locale, "");
         {
           SECTIONS.map(section => {
             const count = posts.filter(
-              p => sectionOf(p.id) === section.key
+              p =>
+                sectionPathOf(p.id) === section.key ||
+                isUnderSection(p.id, section.key)
             ).length;
             return (
               <a
@@ -247,7 +249,7 @@ const homePath = getRelativeLocaleUrl(locale, "");
           <h2 class="section-heading">최근 글</h2>
           <ul class="space-y-5">
             {recentPosts.map(post => {
-              const section = getSection(sectionOf(post.id));
+              const section = sectionOf(post.id);
               return (
                 <li>
                   <div class="flex items-baseline gap-2">

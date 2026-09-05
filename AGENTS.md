@@ -47,19 +47,54 @@ gh run list -R loading1031/loading1031.github.io
 
 `scripts/blog.mjs` 는 레포 밖에서 실행되면 거부한다. 문서상 규칙이 아니라 실제로 막혀 있다.
 
+### ⚠️ 글 하나 = 세션 하나
+
+**글 하나를 끝낼 때까지가 세션 하나다.** 한 세션에서 여러 글을 쓰지 않는다.
+
+이유는 위와 같다. A 글을 쓰면서 읽은 참고 자료·강의 내용·대화가 컨텍스트에 남아 있는 채로
+B 글을 쓰면, A 의 내용이 B 에 섞여 들어간다. 사실관계가 어긋나고, 자료 출처가 뒤엉키고,
+회사 자료가 끼어 있었다면 그게 다른 글로 새어나간다.
+
+글 하나를 발행(또는 초안 저장)하고 나면 **세션을 닫고 새로 연다.**
+이어서 다른 글을 써달라는 요청을 받으면, 쓰지 말고 새 세션을 열라고 안내한다.
+
+**브랜치는 쓰지 않는다.** 혼자 쓰는 정적 블로그라 리뷰어가 없고,
+`draft: true` 가 이미 "아직 안 보이는 상태" 역할을 한다. 대신 두 가지를 지킨다.
+
+- 발행할 때 `git add -A` 를 쓰지 않는다. **그 글 파일만 경로로 지정해 스테이징한다.**
+  작업 트리에 다른 글의 초안이 남아 있으면 같이 딸려 들어간다.
+- 글 커밋과 사이트 코드 커밋을 섞지 않는다.
+
+(사이트를 크게 개편하거나 여러 글을 동시에 진행해야 하면 그때 브랜치를 쓴다.)
+
+### 참고 자료는 `ref/` 에 둔다
+
+강의 노트, 다른 AI 와 나눈 대화 내보내기, PDF 같은 재료는 `ref/` 에 넣는다.
+이 디렉터리는 `.gitignore` 에 있어 **커밋되지 않는다.**
+
+글을 쓸 때 재료로 읽되, **그대로 옮기지 않는다.** 이해한 내용을 사용자의 말로 다시 쓴다.
+`ref/` 안의 대화에도 회사 정보나 개인 정보가 섞여 있을 수 있으므로 그대로 통과시키지 않는다.
+
 ### 세 단계
 
 ```
-   [ 이 폴더에서 연 세션 ]
-   /blog-capture   →   /blog-refine   →   /blog-publish
-   듣고 정리해 초안      독자 눈으로 편집      점검 → 푸시 → 배포
-   draft: true          draft 유지          draft 해제, 공개
+   [ 이 폴더에서 연 세션 · 글 하나당 세션 하나 ]
+
+   /blog-capture   ┐
+   또는            ├→   /blog-refine   →   /blog-publish
+   /blog-lecture   ┘    독자 눈으로 편집     점검 → 푸시 → 배포
+   초안 저장             draft 유지         draft 해제, 공개
+   draft: true
 ```
 
 **`/blog-capture`** — 사용자가 무엇을 알게 됐는지 듣고, 남길 가치가 있는지 판단하고
 (기준: 6개월 뒤의 내가 읽고 바로 써먹을 수 있는가), 회사 정보를 걷어낸 뒤 글로 쓴다.
 회사 관련 내용은 익명화가 아니라 **같은 원리를 보여주는 새 최소 재현 예제로 다시 쓴다.**
 그렇게 다시 쓸 수 없으면 글로 만들지 않는다. `draft: true` 로 저장되므로 배포되지 않는다.
+
+**`/blog-lecture`** — 온라인 강의 한 섹션을 정리할 때. 강의별 섹션·태그·제목 규칙
+(`섹션N: 주제`)이 스킬 안의 등록부에 고정돼 있고, `ref/` 자료를 재료로 읽는다.
+강의 요약이 아니라 **강의가 답을 안 준 지점과 내가 막혔던 것**을 쓰게 한다.
 
 **`/blog-refine`** — 맥락 없는 독자의 눈으로 재검토. AI 말투 제거, 결론 앞으로 끌어내기,
 코드 실행 검증, 링크 확인, 보안 재확인. `draft` 는 그대로 둔다.
@@ -98,10 +133,13 @@ node scripts/blog.mjs doctor --build           # 계정/frontmatter/빌드 점�
 ```
 astro-paper.config.ts   # 사이트 제목·설명·소셜·기능 토글 (여기부터 본다)
 astro.config.ts         # 통합, i18n(ko), 폰트, 마크다운 플러그인
-.claude/skills/         # blog-capture / blog-refine / blog-publish (이 레포 안에서만 동작)
+.claude/skills/         # blog-capture / blog-lecture / blog-refine / blog-publish
+                        # (모두 이 레포 안에서만 동작)
+ref/                    # 참고 자료 (강의 노트, AI 대화 내보내기). gitignore 됨
 scripts/blog.mjs        # 글 파이프라인 헬퍼 CLI
 src/
-  data/sections.ts      # 섹션 정의 (key = 디렉터리 = URL). 여기만 고치면 사이드바·홈·검증이 따라온다
+  data/sections.ts      # 섹션 정의 (key = 디렉터리 = URL). 하위 섹션은 children 에.
+                        #   여기만 고치면 사이드바·홈·목록 페이지·검증이 따라온다
   data/resume.ts        # 홈(이력서) 내용. 이 파일만 고치면 홈이 바뀐다
   content/posts/        # 글. project/ study/ cert/ paper/ 하위에 둔다
   content.config.ts     # frontmatter 스키마
@@ -110,8 +148,9 @@ src/
   layouts/              # Layout(공통 셸) / PostLayout
   pages/
     index.astro             # 홈 = 이력서
-    [section]/index.astro   # 섹션별 글 목록  → /study/
-    [...slug]/index.astro   # 글 본문          → /study/hydration/
+    [section]/index.astro              # 섹션 글 목록      → /study/
+    [section]/[subsection]/index.astro # 하위 섹션 글 목록  → /study/database/
+    [...slug]/index.astro              # 글 본문          → /study/database/acid/
     tags/ archives/ search/
   styles/theme.css      # 색 토큰 (라이트/다크)
 .github/workflows/deploy.yml  # main 푸시 시 자동 배포
@@ -123,11 +162,13 @@ src/
 | --- | --- | --- |
 | 프로젝트 | `project` | 만들면서 부딪힌 것들. 왜 그렇게 만들었는지까지 |
 | Study | `study` | 공부 기록, Claude와의 대화에서 건진 인사이트 |
+| └ Database | `study/database` | 트랜잭션, 인덱스, 복제. 강의 정리가 여기 쌓인다 |
 | 자격증 | `cert` | 준비 과정, 정리한 개념, 시험 후기 |
 | 논문 | `paper` | 읽은 논문을 내 말로 다시 정리한 기록 |
 
 섹션을 추가·수정하려면 `src/data/sections.ts` 한 곳만 고치고 디렉터리를 만든다.
-사이드바 카운트, 홈 카드, `blog.mjs` 검증이 모두 이 파일을 읽는다.
+하위 섹션은 `children` 에 넣으면 되고, 두 단계까지 라우팅된다.
+사이드바 카운트, 홈 카드, 목록 페이지, `blog.mjs` 검증이 모두 이 파일을 읽는다.
 
 ### 알아둘 것
 

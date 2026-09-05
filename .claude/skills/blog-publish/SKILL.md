@@ -48,9 +48,20 @@ node scripts/blog.mjs show <섹션/슬러그>
 
 ```bash
 node scripts/blog.mjs ready <섹션/슬러그>
-git add -A
-git status --short
 ```
+
+**발행하려는 글 파일만 스테이징한다.** `git add -A` 를 쓰지 않는다 —
+작업 트리에 다른 글의 초안이 남아 있으면 같이 딸려 들어간다.
+
+```bash
+git add "src/content/posts/<섹션>/<슬러그>.md"
+git status --short          # 스테이징된 것이 그 글 하나뿐인지 확인
+```
+
+글에 딸린 이미지 등을 추가했다면 그것도 경로를 지정해 함께 담는다.
+사이트 코드까지 고쳤다면 그건 **별도 커밋**으로 분리한다.
+
+`git status` 에 다른 글의 초안이 보이면 그대로 둔다. 지우거나 커밋하지 않는다.
 
 커밋 메시지는 한 줄. `글: <제목>` 형태로 쓴다.
 

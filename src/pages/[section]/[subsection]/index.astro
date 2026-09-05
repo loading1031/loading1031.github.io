@@ -1,0 +1,39 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import SectionIndex from "@/components/SectionIndex.astro";
+import { getSortedPosts } from "@/utils/getSortedPosts";
+import { ALL_SECTIONS, sectionPathOf } from "@/data/sections";
+import config from "@/config";
+
+export const getStaticPaths = (async () => {
+  const sorted = getSortedPosts(await getCollection("posts"));
+
+  return ALL_SECTIONS.filter(section => section.parentPath !== undefined).map(
+    section => ({
+      params: {
+        section: section.parentPath!,
+        subsection: section.key,
+      },
+      props: {
+        section,
+        posts: sorted.filter(post => sectionPathOf(post.id) === section.path),
+      },
+    })
+  );
+}) satisfies GetStaticPaths;
+
+const { section, posts } = Astro.props;
+---
+
+<Layout
+  title={`${section.label} | ${config.site.title}`}
+  description={section.description}
+>
+  <Header />
+  <SectionIndex {section} {posts} />
+  <Footer />
+</Layout>
