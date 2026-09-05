@@ -17,6 +17,8 @@ const blog = defineCollection({
 			tags: z.array(z.string()).default([]),
 			// true 면 프로덕션 빌드에서 제외된다 (로컬 dev 에서는 보임)
 			draft: z.boolean().default(false),
+			// 이 글이 어떤 작업/대화에서 나왔는지 (본문에는 표시되지 않는 메모)
+			source: z.string().optional(),
 		}),
 });
 

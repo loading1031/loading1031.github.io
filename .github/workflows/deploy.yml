@@ -20,11 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Build
-        uses: withastro/action@v3
-        with:
-          node-version: 22
+        # v6 부터 Node 24 기반 액션을 쓰고 빌드 캐시를 지원한다.
+        uses: withastro/action@v6
 
   deploy:
     needs: build
@@ -35,4 +34,4 @@ jobs:
     steps:
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

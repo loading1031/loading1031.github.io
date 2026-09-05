@@ -19,14 +19,46 @@ gh auth status          # loading1031 계정으로 푸시
 
 전역 설정을 건드리지 말고, 항상 이 레포의 로컬 설정만 사용한다.
 
-## 글 쓰기
+## 글이 올라오는 경로
 
-1. `src/content/_post-template.md` 를 복사해 `src/content/blog/<slug>.md` 로 만든다.
-   파일 이름이 곧 URL (`/blog/<slug>/`) 이므로 영문 소문자 + 하이픈으로 짓는다.
-2. frontmatter 를 채운다. 필수는 `title`, `description`, `pubDate`.
-3. `tags` 는 `src/consts.ts` 의 `TAG_LABELS` 에 정의된 값을 쓴다 (`study` / `insight` / `til`).
-   새 분류를 추가할 때는 `TAG_LABELS` 에 한글 라벨도 같이 등록한다.
-4. `draft: true` 인 글은 로컬(`npm run dev`)에서만 보이고 배포에는 빠진다. 완성되면 지운다.
+이 블로그는 손으로 글을 쓰는 곳이 아니라, **Claude 세션에서 나온 내용을 정리해 올리는 곳**이다.
+세 단계로 나뉜다.
+
+```
+  [ 아무 프로젝트 세션 ]        [ 블로그 레포 ]           [ 블로그 레포 ]
+        /blog-capture     →      /blog-refine      →      /blog-publish
+     세션 맥락 그대로 초안        독자 눈으로 편집          점검 → 푸시 → 배포
+     draft: true 로 저장         draft 유지               draft 해제, 공개
+```
+
+### 1. `/blog-capture` — 어느 세션에서든
+
+다른 프로젝트에서 작업하다 "이건 남겨두자" 싶을 때 부른다.
+`~/.claude/skills/blog-capture` 가 이 레포의 `.claude/skills/blog-capture` 를 가리키는
+심볼릭 링크라서 모든 세션에서 쓸 수 있다. 스킬 내용은 이 레포에서 고친다.
+
+세션 맥락이 살아 있는 그 시점이 글이 가장 잘 나오는 때이므로, 메모가 아니라 **완성된 글**을 쓴다.
+`draft: true` 로 저장되므로 배포되지는 않는다. 커밋·푸시도 하지 않아서 하던 작업이 끊기지 않는다.
+
+**회사 프로젝트 세션에서 캡처할 때**는 사내 코드·식별자·URL·고객 정보를 전부 걷어내고
+일반화된 최소 재현 예제로 다시 쓴다. 그렇게 다시 쓸 수 없는 내용이면 캡처하지 않는다.
+
+### 2. `/blog-refine` — 이 레포에서
+
+세션 맥락이 없는 독자의 눈으로 다시 읽는다. AI 말투 제거, 결론 앞으로 끌어내기,
+코드·링크 검증, 보안 재확인. `draft` 는 그대로 둔다.
+
+### 3. `/blog-publish` — 이 레포에서
+
+`doctor --build` 로 계정·frontmatter·빌드를 점검하고, draft 를 내리고, 커밋·푸시하고,
+Actions 배포를 지켜본 뒤 실제 URL 이 뜨는지 확인한다.
+
+### 손으로 쓸 때
+
+`src/content/_post-template.md` 를 복사해 `src/content/blog/<slug>.md` 로 만든다.
+파일 이름이 곧 URL (`/blog/<slug>/`) 이므로 영문 소문자 + 하이픈으로 짓는다.
+`tags` 는 `src/consts.ts` 의 `TAG_LABELS` 에 정의된 값(`study` / `insight` / `til`)을 쓰고,
+새 분류는 `TAG_LABELS` 에 한글 라벨을 먼저 등록한다.
 
 글의 기준: **6개월 뒤의 내가 읽고 바로 써먹을 수 있는가.**
 Claude 답변은 그대로 붙여넣지 말고 이해한 말로 다시 쓴다.
@@ -39,9 +71,21 @@ npm run build    # 프로덕션 빌드 + 타입 체크
 npm run preview  # 빌드 결과 미리보기
 ```
 
+글 파이프라인 헬퍼. 판단은 스킬이 하고, 틀리면 안 되는 기계적인 일은 이 스크립트가 한다.
+
+```bash
+node scripts/blog.mjs list --drafts     # 초안 목록
+node scripts/blog.mjs show <slug>       # 원문 출력
+node scripts/blog.mjs new --title ...   # 초안 생성 (frontmatter/태그 검증 포함)
+node scripts/blog.mjs ready <slug>      # draft 해제
+node scripts/blog.mjs doctor --build    # 계정/frontmatter/빌드 점검
+```
+
 ## 구조
 
 ```
+.claude/skills/    # blog-capture / blog-refine / blog-publish
+scripts/blog.mjs   # 글 파이프라인 헬퍼 CLI
 src/
   consts.ts          # 사이트 제목, 설명, 태그 라벨
   content.config.ts  # 글 frontmatter 스키마
