@@ -1,0 +1,36 @@
+---
+import { TAG_LABELS } from '../consts';
+
+interface Props {
+	tag: string;
+	count?: number;
+}
+
+const { tag, count } = Astro.props;
+const label = TAG_LABELS[tag] ?? tag;
+---
+
+<a class="tag" href={`/tags/${tag}/`}>#{label}{count !== undefined && <span class="count">{count}</span>}</a>
+
+<style>
+	.tag {
+		display: inline-flex;
+		gap: 0.35em;
+		align-items: baseline;
+		padding: 0.2em 0.7em;
+		border-radius: 999px;
+		background: rgba(var(--gray-light), 0.9);
+		color: rgb(var(--gray-dark));
+		font-size: 0.85rem;
+		text-decoration: none;
+		line-height: 1.6;
+	}
+	.tag:hover {
+		background: rgba(var(--accent), 0.12);
+		color: var(--accent);
+	}
+	.count {
+		font-size: 0.75em;
+		color: rgb(var(--gray));
+	}
+</style>

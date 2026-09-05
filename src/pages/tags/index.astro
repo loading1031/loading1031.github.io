@@ -1,0 +1,43 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import TagBadge from '../../components/TagBadge.astro';
+import { SITE_TITLE } from '../../consts';
+import { collectTags, getPublishedPosts } from '../../utils/posts';
+
+const tags = collectTags(await getPublishedPosts());
+---
+
+<!doctype html>
+<html lang="ko">
+	<head>
+		<BaseHead title={`태그 | ${SITE_TITLE}`} description="주제별로 묶어 본 글 목록" />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>태그</h1>
+			{
+				tags.length === 0 ? (
+					<p>아직 태그가 없습니다.</p>
+				) : (
+					<div class="tags">
+						{tags.map(({ tag, count }) => (
+							<TagBadge tag={tag} count={count} />
+						))}
+					</div>
+				)
+			}
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.6em;
+	}
+</style>
