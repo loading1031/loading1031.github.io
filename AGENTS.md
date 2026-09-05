@@ -9,15 +9,26 @@ Astro 블로그 템플릿 기반, GitHub Pages 배포.
 ## ⚠️ 계정 주의
 
 **반드시 개인 GitHub 계정(`loading1031` / tjdans1031@gmail.com)으로만 커밋·푸시한다.**
-이 맥의 전역 git 설정은 회사 계정((회사 계정))이므로,
-이 레포에는 로컬 설정이 걸려 있다. 커밋 전에 확인:
+이 맥의 전역 git 설정은 회사 계정((회사 계정))이라,
+이 레포에는 로컬 설정으로 두 가지가 걸려 있다.
+
+- `user.email` / `user.name` — 커밋 author 가 개인 계정이 되도록
+- `credential.https://github.com.helper` — 푸시할 때 개인 계정 토큰을 쓰도록 고정.
+  전역 helper 는 `gh` 의 활성 계정(회사)을 따라가므로 이걸 풀면 푸시가 실패한다.
+
+한 번에 확인:
 
 ```bash
-git config user.email   # tjdans1031@gmail.com 이어야 함
-gh auth status          # loading1031 계정으로 푸시
+node scripts/blog.mjs doctor
 ```
 
-전역 설정을 건드리지 말고, 항상 이 레포의 로컬 설정만 사용한다.
+전역 설정(`git config --global`, `gh auth switch`)은 건드리지 않는다.
+`gh` CLI 로 이 레포를 조회할 때만 토큰을 따로 넘긴다:
+
+```bash
+export GH_TOKEN=$(gh auth token -u loading1031)
+gh run list -R loading1031/loading1031.github.io
+```
 
 ## 글이 올라오는 경로
 

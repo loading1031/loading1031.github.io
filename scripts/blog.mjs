@@ -250,6 +250,24 @@ function cmdDoctor(flags) {
 	}
 	check('origin 원격', remote.includes(`${EXPECTED_OWNER}/`), remote || '설정되지 않음');
 
+	// 전역 credential helper 는 gh 의 활성 계정(회사)을 따라간다.
+	// 레포 로컬에서 개인 토큰으로 고정해두지 않으면 푸시가 실패하거나 엉뚱한 계정으로 붙는다.
+	let helper = '';
+	try {
+		helper = execFileSync('git', ['config', '--local', '--get-all', 'credential.https://github.com.helper'], {
+			cwd: ROOT,
+			encoding: 'utf-8',
+		});
+	} catch {
+		/* 설정 없음 */
+	}
+	const helperPinned = helper.includes(`gh auth token -u ${EXPECTED_OWNER}`);
+	check('푸시 자격증명 고정', helperPinned, helperPinned ? '개인 계정 토큰' : '전역 설정(회사 계정)으로 새어나감');
+	if (!helperPinned) {
+		console.log(`    고치기: git config --local credential.https://github.com.helper "" && \\`);
+		console.log(`             git config --local --add credential.https://github.com.helper '!f() { echo "username=${EXPECTED_OWNER}"; echo "password=$(gh auth token -u ${EXPECTED_OWNER})"; }; f'`);
+	}
+
 	// 2. frontmatter
 	const posts = listPosts();
 	const problems = [];
