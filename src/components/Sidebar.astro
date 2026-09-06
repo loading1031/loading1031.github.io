@@ -106,6 +106,9 @@ const initials = profile.name.slice(0, 2);
   </div>
 
   <!-- 섹션 네비게이션 -->
+  <!-- 글 페이지에서는 목차가 주 네비게이션이므로 프로필 바로 아래에 둔다 -->
+  {headings && headings.length > 0 && <TableOfContents {headings} />}
+
   <nav class="px-3 py-5" aria-label={t.nav.posts}>
     <a
       href={getRelativeLocaleUrl(locale, "")}
@@ -196,8 +199,6 @@ const initials = profile.name.slice(0, 2);
       )
     }
   </nav>
-
-  {headings && headings.length > 0 && <TableOfContents {headings} />}
 
   <div class="flex-1"></div>
 
