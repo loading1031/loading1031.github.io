@@ -1,0 +1,38 @@
+---
+/**
+ * 크롤러 집계용 트래킹 픽셀.
+ *
+ * 글 하단의 조회수 카운터는 브라우저 JS 라서 **JS 를 실행하지 않는 크롤러를 못 본다.**
+ * 이 픽셀은 정적 HTML 에 박혀 있으므로, 하위 리소스까지 가져가는 크롤러는 여기 걸린다.
+ *
+ * 한계를 알고 쓴다 — HTML 만 읽고 가는 크롤러(ClaudeBot·PerplexityBot 등 대부분)는
+ * 이미지를 요청하지 않으므로 잡히지 않는다. 그래서 이 숫자는 **하한선**이고,
+ * 사이드바에는 띄우지 않는다. `GET /stats` 로만 본다.
+ *
+ * 사람 조회수(`views` 테이블)와는 다른 테이블(`agent_hits`)에 쌓아 집계를 섞지 않는다.
+ * 로컬 개발에서는 아예 렌더하지 않는다.
+ */
+import { COUNTER_API } from "@/data/counter";
+
+const path = Astro.url.pathname.endsWith("/")
+  ? Astro.url.pathname
+  : `${Astro.url.pathname}/`;
+
+const src =
+  COUNTER_API && import.meta.env.PROD
+    ? `${COUNTER_API.replace(/\/+$/, "")}/px?p=${encodeURIComponent(path)}`
+    : null;
+---
+
+{
+  src && (
+    <img
+      {src}
+      alt=""
+      width="1"
+      height="1"
+      aria-hidden="true"
+      style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"
+    />
+  )
+}

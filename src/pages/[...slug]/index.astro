@@ -15,6 +15,7 @@ import EditPost from "./_components/EditPost.astro";
 import ShareLinks from "./_components/ShareLinks.astro";
 import BackButton from "./_components/BackButton.astro";
 import BackToTopButton from "./_components/BackToTopButton.astro";
+import ViewCounter from "@/components/ViewCounter.astro";
 import AdjacentPostNav from "./_components/AdjacentPostNav.astro";
 import config from "@/config";
 
@@ -161,6 +162,8 @@ const ogImage = ogImageUrl
     </article>
 
     <hr class="my-8 border-dashed" />
+
+    <ViewCounter />
 
     <EditPost class="sm:hidden" {hideEditPost} {post} />
 

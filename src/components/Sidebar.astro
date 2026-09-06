@@ -8,6 +8,7 @@ import IconRss from "@/assets/icons/IconRss.svg";
 import IconX from "@/assets/icons/IconX.svg";
 import type { MarkdownHeading } from "astro";
 import Socials from "./Socials.astro";
+import TodayVisitors from "./TodayVisitors.astro";
 import ThemeToggle from "./ThemeToggle.astro";
 import TableOfContents from "./TableOfContents.astro";
 import { SECTIONS, isUnderSection, sectionPathOf } from "@/data/sections";
@@ -103,6 +104,7 @@ const initials = profile.name.slice(0, 2);
     <div class="text-muted-foreground mt-3 -ms-2">
       <Socials />
     </div>
+    <TodayVisitors />
   </div>
 
   <!-- 섹션 네비게이션 -->

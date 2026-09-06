@@ -1,0 +1,42 @@
+---
+/**
+ * 사이드바 하단의 "오늘 방문 N".
+ *
+ * 읽기만 한다 — 카운트를 올리는 것은 글 하단의 ViewCounter 뿐이다.
+ * 그래서 사이드바가 모든 페이지에 있어도 숫자가 부풀지 않는다.
+ */
+import { COUNTER_API } from "@/data/counter";
+---
+
+{
+  COUNTER_API && (
+    <p
+      class="text-muted-foreground mt-2 text-xs"
+      data-today-visitors
+      data-api={COUNTER_API}
+      hidden
+    >
+      오늘 방문 <span data-today-count>&mdash;</span>
+    </p>
+  )
+}
+
+<script is:inline data-astro-rerun>
+  (function initTodayVisitors() {
+    const el = document.querySelector("[data-today-visitors]");
+    if (!el) return;
+
+    const out = el.querySelector("[data-today-count]");
+    const api = el.dataset.api.replace(/\/+$/, "");
+
+    fetch(api + "/today")
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (!d || typeof d.today !== "number") return;
+        out.textContent = d.today.toLocaleString("ko-KR");
+        // 숫자를 받은 뒤에 보여준다. 실패하면 아무것도 안 뜬다.
+        el.hidden = false;
+      })
+      .catch(() => {});
+  })();
+</script>

@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "blog",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "observability": { "enabled": true },
+  "vars": {
+    // CORS 를 허용할 Origin. 로컬 개발도 숫자를 읽을 수 있어야 하므로 포함한다.
+    "ALLOWED_ORIGINS": "https://loading1031.github.io,http://localhost:4321",
+    // 카운트를 올릴 수 있는 Origin. 운영 사이트만 — localhost 를 넣으면 개발 중에
+    // 실제 조회수가 오염된다.
+    "WRITE_ORIGINS": "https://loading1031.github.io"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "loading-log-views",
+      "database_id": "74b97dec-9419-4fd8-9713-fd64e0d098cc"
+    }
+  ]
+}

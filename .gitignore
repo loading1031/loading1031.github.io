@@ -28,3 +28,9 @@ public/pagefind/
 
 # 참고 자료 (제미나이 대화 등). 글 쓸 때 재료로만 쓰고 커밋하지 않는다.
 ref/
+
+# wrangler 로컬 시크릿
+.dev.vars
+.dev.vars.*
+.env.local
+.wrangler/

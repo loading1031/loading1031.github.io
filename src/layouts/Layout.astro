@@ -3,6 +3,7 @@ import { Font } from "astro:assets";
 import { ClientRouter } from "astro:transitions";
 import { getRelativeLocaleUrl } from "astro:i18n";
 import Sidebar from "@/components/Sidebar.astro";
+import AgentPixel from "@/components/AgentPixel.astro";
 import { resolveDefaultOgImagePath } from "@/utils/resolveDefaultOgImagePath";
 import { getAssetPath } from "@/utils/withBase";
 import config from "@/config";
@@ -128,6 +129,7 @@ const rssHref = getRelativeLocaleUrl(
     <div class="flex min-h-svh flex-col lg:ps-64">
       <slot />
     </div>
+    <AgentPixel />
     <script>
       import "@/scripts/theme";
     </script>

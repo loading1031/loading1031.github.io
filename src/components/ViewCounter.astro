@@ -1,0 +1,77 @@
+---
+/**
+ * 글 하단 조회수.
+ *
+ * 중복 제거는 브라우저가 한다 — 오늘 이 글을 이미 셌으면 localStorage 에 표시가 남아
+ * 다시 세지 않는다. 서버는 IP 를 보지 않는다.
+ *
+ * 로컬 개발에서는 숫자만 읽고 올리지 않는다. 안 그러면 글 고치면서 새로고침한 것이
+ * 실제 조회수에 섞인다. Worker 쪽도 WRITE_ORIGINS 로 한 번 더 막는다.
+ */
+import { COUNTER_API } from "@/data/counter";
+---
+
+{
+  COUNTER_API && (
+    <p
+      class="text-muted-foreground my-4 text-sm"
+      data-view-counter
+      data-api={COUNTER_API}
+      data-write={import.meta.env.PROD ? "1" : null}
+    >
+      조회 <span data-view-count>&mdash;</span>
+    </p>
+  )
+}
+
+<script is:inline data-astro-rerun>
+  (function initViewCounter() {
+    const el = document.querySelector("[data-view-counter]");
+    if (!el) return;
+
+    const out = el.querySelector("[data-view-count]");
+    const api = el.dataset.api.replace(/\/+$/, "");
+    const canWrite = el.dataset.write === "1";
+
+    let path = location.pathname;
+    if (!path.endsWith("/")) path += "/";
+    const q = "?p=" + encodeURIComponent(path);
+
+    // Worker 와 같은 날짜 계산(Asia/Seoul)을 써서 자정 경계에서 어긋나지 않게 한다.
+    const day = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+    const key = "v:" + path + ":" + day;
+
+    // 저장소를 못 쓰면(시크릿 모드 등) 세는 쪽을 택한다. 새로고침마다 세는 대신
+    // 아예 집계에서 빠지는 일은 막는다.
+    let alreadyCounted = false;
+    try {
+      alreadyCounted = !!localStorage.getItem(key);
+    } catch {}
+
+    async function fetchTotal() {
+      // 오늘 처음이면 올리면서 받아온다. 실패하면 읽기로 물러난다 —
+      // 숫자가 "—" 로 남는 것보다 낫다.
+      if (canWrite && !alreadyCounted) {
+        const r = await fetch(api + "/hit" + q, { method: "POST" });
+        if (r.ok) {
+          try {
+            localStorage.setItem(key, "1");
+          } catch {}
+          return (await r.json()).total;
+        }
+      }
+      const r = await fetch(api + "/views" + q);
+      return r.ok ? (await r.json()).total : null;
+    }
+
+    fetchTotal()
+      .then(total => {
+        if (typeof total !== "number") return;
+        out.textContent = total.toLocaleString("ko-KR");
+      })
+      .catch(() => {
+        // 카운터가 죽어도 글 읽기를 방해하지 않는다.
+        el.remove();
+      });
+  })();
+</script>
