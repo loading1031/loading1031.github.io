@@ -172,24 +172,46 @@ export default {
       });
     }
 
-    // 사이드바에 띄우는 "오늘 방문 N". 가벼워야 하므로 한 줄만 읽는다.
+    // 사이드바의 "오늘 방문 N". views 를 SUM 하면 "글을 몇 개 읽었나"가 되므로
+    // 사이트 단위 순방문은 visits 테이블로 따로 센다.
     if (url.pathname === "/today" && request.method === "GET") {
       const day = kstDay();
-      const row = await env.DB.prepare(
-        "SELECT COALESCE(SUM(n), 0) AS v FROM views WHERE day = ?1"
-      )
+      const row = await env.DB.prepare("SELECT n FROM visits WHERE day = ?1")
         .bind(day)
         .first();
-      return json({ day, today: row?.v ?? 0 }, request, env);
+      return json({ day, today: row?.n ?? 0 }, request, env);
+    }
+
+    // 오늘 이 브라우저의 첫 방문. 경로와 무관하게 하루 한 번만 불린다.
+    // 올린 뒤의 값을 그대로 돌려주므로 사이드바가 따로 읽지 않아도 된다.
+    if (url.pathname === "/visit" && request.method === "POST") {
+      const origin = request.headers.get("Origin");
+      if (!origin || !writeOrigins(env).includes(origin)) {
+        return json({ error: "forbidden" }, request, env, 403);
+      }
+      const day = kstDay();
+      await env.DB.prepare(
+        `INSERT INTO visits (day, n) VALUES (?1, 1)
+         ON CONFLICT (day) DO UPDATE SET n = n + 1`
+      )
+        .bind(day)
+        .run();
+      const row = await env.DB.prepare("SELECT n FROM visits WHERE day = ?1")
+        .bind(day)
+        .first();
+      return json({ day, today: row?.n ?? 0 }, request, env);
     }
 
     // 내가 볼 통계. 최근 30일 추이와 상위 글.
     if (url.pathname === "/stats" && request.method === "GET") {
       const day = kstDay();
-      const [today, days, top, agentToday, agentAll, uas] = await env.DB.batch([
-        env.DB.prepare("SELECT COALESCE(SUM(n),0) AS v FROM views WHERE day = ?1").bind(day),
+      const [today, days, top, agentToday, agentAll, uas, pv] = await env.DB.batch([
+        env.DB.prepare("SELECT COALESCE(n,0) AS v FROM visits WHERE day = ?1").bind(day),
         env.DB.prepare(
-          "SELECT day, SUM(n) AS n FROM views GROUP BY day ORDER BY day DESC LIMIT 30"
+          `SELECT v.day, v.n AS visitors, COALESCE(p.n, 0) AS pageviews
+           FROM visits v
+           LEFT JOIN (SELECT day, SUM(n) AS n FROM views GROUP BY day) p ON p.day = v.day
+           ORDER BY v.day DESC LIMIT 30`
         ),
         env.DB.prepare(
           "SELECT path, SUM(n) AS n FROM views GROUP BY path ORDER BY n DESC LIMIT 20"
@@ -203,11 +225,16 @@ export default {
         env.DB.prepare(
           "SELECT ua, first_day, last_day, n FROM ua_seen ORDER BY n DESC LIMIT 30"
         ),
+        env.DB.prepare(
+          "SELECT COALESCE(SUM(n),0) AS v FROM views WHERE day = ?1"
+        ).bind(day),
       ]);
       return json(
         {
           day,
+          // 방문자 = 브라우저 하루 1회 / 조회수 = 글별 하루 1회의 합
           today: today.results[0]?.v ?? 0,
+          pageviews_today: pv.results[0]?.v ?? 0,
           days: days.results,
           top: top.results,
           // 픽셀로 잡힌 것. HTML 만 가져가는 봇은 여기 안 나온다 — 하한선이다.

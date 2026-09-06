@@ -29,3 +29,10 @@ CREATE TABLE IF NOT EXISTS ua_seen (
   last_day  TEXT    NOT NULL,
   n         INTEGER NOT NULL DEFAULT 0
 );
+
+-- 사이트 단위 일별 순방문. 브라우저가 하루 한 번만 올린다(경로 무관).
+-- views 를 SUM 하면 "글을 몇 개 읽었나"가 되어 방문자 수와 달라진다.
+CREATE TABLE IF NOT EXISTS visits (
+  day TEXT    NOT NULL PRIMARY KEY,   -- 2026-09-07 (Asia/Seoul)
+  n   INTEGER NOT NULL DEFAULT 0
+);

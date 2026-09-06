@@ -1,9 +1,14 @@
 ---
 /**
- * 사이드바 하단의 "오늘 방문 N".
+ * 사이드바의 "오늘 방문 N" — 사이트 단위 일별 순방문.
  *
- * 읽기만 한다 — 카운트를 올리는 것은 글 하단의 ViewCounter 뿐이다.
- * 그래서 사이드바가 모든 페이지에 있어도 숫자가 부풀지 않는다.
+ * 글 하단의 ViewCounter 와 기준이 다르다. 이쪽은 **경로와 무관하게 브라우저 하루 1회**다.
+ * 글별 조회수를 SUM 하면 "한 사람이 글 몇 개를 읽었나"가 되어 방문자 수와 어긋난다.
+ *
+ * 올릴 때 갱신된 값을 그대로 받아 쓴다. 따로 읽으면 ViewCounter 의 쓰기와 경쟁해서
+ * 한 박자 늦은 숫자가 뜬다.
+ *
+ * 로컬 개발에서는 읽기만 한다.
  */
 import { COUNTER_API } from "@/data/counter";
 ---
@@ -14,6 +19,7 @@ import { COUNTER_API } from "@/data/counter";
       class="text-muted-foreground mt-2 text-xs"
       data-today-visitors
       data-api={COUNTER_API}
+      data-write={import.meta.env.PROD ? "1" : null}
       hidden
     >
       오늘 방문 <span data-today-count>&mdash;</span>
@@ -28,13 +34,35 @@ import { COUNTER_API } from "@/data/counter";
 
     const out = el.querySelector("[data-today-count]");
     const api = el.dataset.api.replace(/\/+$/, "");
+    const canWrite = el.dataset.write === "1";
 
-    fetch(api + "/today")
-      .then(r => (r.ok ? r.json() : null))
-      .then(d => {
-        if (!d || typeof d.today !== "number") return;
-        out.textContent = d.today.toLocaleString("ko-KR");
-        // 숫자를 받은 뒤에 보여준다. 실패하면 아무것도 안 뜬다.
+    // Worker 와 같은 날짜 계산(Asia/Seoul). 경로는 키에 넣지 않는다.
+    const day = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+    const key = "visit:" + day;
+
+    let alreadyCounted = false;
+    try {
+      alreadyCounted = !!localStorage.getItem(key);
+    } catch {}
+
+    async function fetchToday() {
+      if (canWrite && !alreadyCounted) {
+        const r = await fetch(api + "/visit", { method: "POST" });
+        if (r.ok) {
+          try {
+            localStorage.setItem(key, "1");
+          } catch {}
+          return (await r.json()).today;
+        }
+      }
+      const r = await fetch(api + "/today");
+      return r.ok ? (await r.json()).today : null;
+    }
+
+    fetchToday()
+      .then(today => {
+        if (typeof today !== "number") return;
+        out.textContent = today.toLocaleString("ko-KR");
         el.hidden = false;
       })
       .catch(() => {});
