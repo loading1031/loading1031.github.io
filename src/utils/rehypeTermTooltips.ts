@@ -8,6 +8,9 @@ import type { Root, Element, RootContent } from "hast";
  *   [가시성 검사](#가시성-검사 "스냅샷과 튜플 헤더를 비교해 이 행이 나에게 보이는지 판정")
  *     → 점선 밑줄 + 마우스 올리면 툴팁 + 누르면 아래 상세 설명으로 이동
  *
+ *   [LSN](/study/database/section-2-acid/#lsn-... "WAL 스트림 안에서의 바이트 위치")
+ *     → 다른 글의 절로 보내는 것도 같은 방식으로 동작한다
+ *
  *   <abbr title="트랜잭션마다 커밋/중단 상태를 2비트로 적어 둔 파일">pg_xact</abbr>
  *     → 점선 밑줄 + 툴팁만. 따로 상세 설명을 두지 않는 용어에 쓴다.
  *
@@ -47,8 +50,12 @@ function walk(node: Element): void {
 
     const title = child.properties?.title;
     const href = child.properties?.href;
+    // 같은 글 안의 절(#...) 뿐 아니라 다른 글의 절(/study/...#...) 로 가는 링크도 용어로 본다.
+    // title 이 붙어 있을 때만 해당되므로, 평범한 본문 링크는 영향받지 않는다.
     const isAnchorTerm =
-      child.tagName === "a" && typeof href === "string" && href.startsWith("#");
+      child.tagName === "a" &&
+      typeof href === "string" &&
+      (href.startsWith("#") || href.startsWith("/"));
     const isAbbrTerm = child.tagName === "abbr";
 
     if (typeof title === "string" && title && (isAnchorTerm || isAbbrTerm)) {
