@@ -239,6 +239,12 @@ src/
   Discussion 제목이 곧 글 경로(`/study/foo/`)다. `pathname` 매핑을 쓰면
   뷰 트랜지션(`/study/foo`)과 새로고침(`/study/foo/`)이 서로 다른 Discussion 을
   만들어 버린다. 양쪽 다 `src/data/comments.ts` 의 `commentTerm()` 을 거친다.
+- **로그인하고 돌아오면 댓글 자리로 직접 내려간다.** 주소에 붙은 `#comments` 는
+  믿을 수 없다 — giscus 스크립트가 로드되면서 세션 파라미터와 **해시를 같이 지우는데**,
+  그게 브라우저의 앵커 스크롤보다 먼저 끝나면 스크롤이 아예 안 일어난다(긴 글일수록
+  그렇다). 게다가 iframe 은 lazy 라 화면 근처로 가기 전엔 로드조차 안 되므로
+  "댓글이 다 뜨면 그때 내려가자" 는 영원히 오지 않는다. 그래서 `?giscus=` 파라미터를
+  보고 `Comments.astro` 가 직접 스크롤한다.
 - **목록의 댓글 수는 빌드 시점 값이다.** GitHub GraphQL 은 토큰을 요구해서 브라우저에서
   직접 못 부른다(토큰이 노출된다). 그래서 빌드가 한 번 읽어 HTML 에 박는다
   (`src/utils/getCommentCounts.ts`). 새 댓글은 **다음 배포 때** 목록에 반영되고,
