@@ -389,17 +389,56 @@ function cmdDoctor(flags) {
 
   // 3. 빌드 (--build 일 때만, 느리므로)
   if (flags.build) {
+    let built = false;
     try {
       execFileSync("npm", ["run", "build"], { cwd: ROOT, stdio: "pipe" });
       check("프로덕션 빌드", true);
+      built = true;
     } catch (error) {
       check("프로덕션 빌드", false);
       console.log(String(error.stdout ?? "") + String(error.stderr ?? ""));
       failed++;
     }
+
+    // 4. 댓글 term 이 글 주소와 같은지.
+    //
+    // giscus 는 이 term 으로 Discussion 을 찾고, 목록의 댓글 수도 같은 문자열로
+    // 조회한다. 어긋나도 **에러가 안 난다** — 댓글이 엉뚱한 Discussion 에 달리고
+    // 목록 숫자만 조용히 0 이 된다. 그래서 손으로는 못 잡는다.
+    //
+    // 단위 테스트로는 못 잡는 부분이다. term 은 Astro 의 라우팅 설정
+    // (trailingSlash, i18n 접두사)을 타고 만들어지므로 빌드 결과물로만 확인된다.
+    if (built) {
+      const mismatched = [];
+      let checked = 0;
+      for (const file of walkHtml(path.join(ROOT, "dist"))) {
+        const html = fs.readFileSync(file, "utf-8");
+        const match = html.match(/data-term="([^"]*)"/);
+        if (!match) continue;
+        checked++;
+        // dist/study/a/index.html → /study/a/
+        const url = `/${path.relative(path.join(ROOT, "dist"), path.dirname(file))}/`
+          .replace(/\\/g, "/")
+          .replace(/^\/\.\//, "/");
+        if (match[1] !== url) mismatched.push(`${url} → data-term="${match[1]}"`);
+      }
+      check(`댓글 term (글 ${checked}개)`, mismatched.length === 0);
+      for (const line of mismatched) console.log(`    어긋남: ${line}`);
+      if (mismatched.length > 0) failed++;
+    }
   }
 
   process.exit(failed > 0 ? 1 : 0);
+}
+
+/** dist 안의 .html 파일을 모두 훑는다. */
+function* walkHtml(dir) {
+  if (!fs.existsSync(dir)) return;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) yield* walkHtml(full);
+    else if (entry.name.endsWith(".html")) yield full;
+  }
 }
 
 // ---------- 진입점 ----------

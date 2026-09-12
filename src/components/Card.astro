@@ -3,6 +3,8 @@ import type { CollectionEntry } from "astro:content";
 import { getPostUrl } from "@/utils/getPostPaths";
 import { toTransitionName } from "@/utils/toTransitionName";
 import Datetime from "./Datetime.astro";
+import CommentCount from "./CommentCount.astro";
+import { commentTerm } from "@/data/comments";
 
 type Props = {
   variant?: "h2" | "h3";
@@ -11,6 +13,8 @@ type Props = {
 const { variant: Heading = "h2", id, data, filePath } = Astro.props;
 
 const { title, description, ...props } = data;
+
+const term = commentTerm(getPostUrl(id, filePath, Astro.currentLocale));
 ---
 
 <li class="my-6">
@@ -26,6 +30,9 @@ const { title, description, ...props } = data;
       {title}
     </Heading>
   </a>
-  <Datetime {...props} />
+  <div class="flex flex-wrap items-center gap-x-3">
+    <Datetime {...props} />
+    <CommentCount {term} />
+  </div>
   <p>{description}</p>
 </li>

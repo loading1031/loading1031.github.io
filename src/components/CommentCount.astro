@@ -1,0 +1,36 @@
+---
+/**
+ * 목록에 뜨는 댓글 수.
+ *
+ * 숫자는 빌드 시점에 GitHub Discussions 에서 읽어온다(`getCommentCounts`).
+ * 댓글이 하나도 없거나 토큰이 없어 못 읽었으면 아무것도 렌더하지 않는다 —
+ * "댓글 0" 이 줄줄이 뜨는 것보다 낫다.
+ */
+import IconMessage from "@/assets/icons/IconMessage.svg";
+import { getCommentCounts } from "@/utils/getCommentCounts";
+
+type Props = {
+  /** `commentTerm()` 이 만든 글 경로 */
+  term: string;
+  class?: string;
+};
+
+const { term, class: className } = Astro.props;
+const count = (await getCommentCounts()).get(term) ?? 0;
+---
+
+{
+  count > 0 && (
+    <span
+      class:list={[
+        "text-muted-foreground flex items-center gap-x-1 text-sm",
+        className,
+      ]}
+      title="마지막 배포 시점 기준"
+    >
+      <IconMessage class="inline-block size-4" aria-hidden="true" />
+      <span class="tabular-nums">{count}</span>
+      <span class="sr-only">개의 댓글</span>
+    </span>
+  )
+}

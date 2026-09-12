@@ -6,9 +6,16 @@ import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Datetime from "@/components/Datetime.astro";
+import CommentCount from "@/components/CommentCount.astro";
 import { getSortedPosts } from "@/utils/getSortedPosts";
 import { getPostUrl } from "@/utils/getPostPaths";
-import { SECTIONS, isUnderSection, sectionOf, sectionPathOf } from "@/data/sections";
+import {
+  SECTIONS,
+  isUnderSection,
+  sectionOf,
+  sectionPathOf,
+} from "@/data/sections";
+import { commentTerm } from "@/data/comments";
 import {
   profile,
   summary,
@@ -262,6 +269,11 @@ const homePath = getRelativeLocaleUrl(locale, "");
                       pubDatetime={post.data.pubDatetime}
                       modDatetime={post.data.modDatetime}
                       timezone={post.data.timezone}
+                    />
+                    <CommentCount
+                      term={commentTerm(
+                        getPostUrl(post.id, post.filePath, locale)
+                      )}
                     />
                   </div>
                   <a

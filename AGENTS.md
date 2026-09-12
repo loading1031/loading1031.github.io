@@ -160,7 +160,8 @@ Claude 답변은 그대로 붙여넣지 말고 이해한 말로 다시 쓴다.
 
 ```bash
 npm run dev      # 로컬 서버 (draft 글도 보임)
-npm run build    # 프로덕션 빌드 + 타입 체크
+npm test         # 단위 테스트 (node 내장 러너, 의존성 없음)
+npm run build    # 테스트 + 프로덕션 빌드 + 타입 체크
 npm run preview  # 빌드 결과 미리보기
 ```
 
@@ -233,6 +234,27 @@ src/
   다시 켤 수 있다.
 - **검색은 pagefind.** 빌드 시 `dist/pagefind` 를 만들어 `public/` 으로 복사한다.
   이 디렉터리는 `.gitignore` 에 있다.
+- **댓글은 giscus(GitHub Discussions).** 테마 원본에는 댓글 기능이 없어 직접 붙였다.
+  글 하나 = Discussion 하나이고, 짝은 `mapping: specific` 으로 맺는다 —
+  Discussion 제목이 곧 글 경로(`/study/foo/`)다. `pathname` 매핑을 쓰면
+  뷰 트랜지션(`/study/foo`)과 새로고침(`/study/foo/`)이 서로 다른 Discussion 을
+  만들어 버린다. 양쪽 다 `src/data/comments.ts` 의 `commentTerm()` 을 거친다.
+- **목록의 댓글 수는 빌드 시점 값이다.** GitHub GraphQL 은 토큰을 요구해서 브라우저에서
+  직접 못 부른다(토큰이 노출된다). 그래서 빌드가 한 번 읽어 HTML 에 박는다
+  (`src/utils/getCommentCounts.ts`). 새 댓글은 **다음 배포 때** 목록에 반영되고,
+  글 페이지의 giscus 는 항상 실시간이다. 토큰이 없으면 숫자만 빠지고 빌드는 성공한다.
+  CI 는 `deploy.yml` 의 `discussions: read` + `GITHUB_TOKEN` 으로 읽는다.
+- **테스트는 "조용히 틀리는 것"에만 붙인다.** 러너는 Node 내장(`node --test`)이고
+  Node 24 가 TS 를 그대로 읽으므로 의존성이 없다. `npm run build` 앞에 걸려 있어
+  로컬 빌드·`doctor --build`·CI 어디서 돌려도 같이 돈다.
+  외부 서비스(giscus 위젯, GitHub 로그인)는 테스트하지 않는다 — 저쪽이 죽으면
+  우리 CI 만 빨개지고 고칠 수가 없다. 붙일 때 한 번 실제로 확인하는 것으로 갈음한다.
+  지금 있는 것:
+  - `src/utils/fetchCommentCounts.test.ts` — 답글 합산, 커서 페이지네이션,
+    실패 시 빈 맵. 실패해도 빌드가 깨지지 않는 코드라 눈으로는 못 잡는다
+  - `doctor --build` 의 **댓글 term 검사** — 글 페이지의 `data-term` 이 그 페이지의
+    실제 주소와 같은지 빌드 결과물에서 확인한다. term 은 Astro 라우팅 설정
+    (`trailingSlash`, i18n 접두사)을 타고 만들어져서 단위 테스트로는 못 잡는다
 
 `CLAUDE.md` 는 이 파일(`AGENTS.md`)로 향하는 심볼릭 링크다. 내용은 여기서 고친다.
 

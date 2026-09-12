@@ -9,6 +9,8 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  # 목록에 뜨는 댓글 수를 빌드가 GitHub Discussions 에서 읽어온다.
+  discussions: read
 
 # 배포는 한 번에 하나만. 진행 중인 배포는 취소하지 않는다.
 concurrency:
@@ -29,6 +31,9 @@ jobs:
       - name: Build
         # v6 부터 Node 24 기반 액션을 쓰고 빌드 캐시를 지원한다.
         uses: withastro/action@v6
+        env:
+          # 없으면 목록의 댓글 수만 빠진다. 빌드는 그대로 성공한다.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
     needs: build
