@@ -255,6 +255,14 @@ src/
   - `doctor --build` 의 **댓글 term 검사** — 글 페이지의 `data-term` 이 그 페이지의
     실제 주소와 같은지 빌드 결과물에서 확인한다. term 은 Astro 라우팅 설정
     (`trailingSlash`, i18n 접두사)을 타고 만들어져서 단위 테스트로는 못 잡는다
+- **광고는 준비만 돼 있고 꺼져 있다.** `src/data/ads.ts` 의 `client` 가 비면 광고
+  스크립트도 광고 자리도 아예 안 나간다(빌드 결과에 `adsbygoogle` 0건). 승인받으면
+  거기 두 값만 채운다. **`public/ads.txt` 는 승인 전에 만들지 않는다** — 내용이 빈
+  ads.txt 는 "승인된 판매자가 없다"는 선언이라 파일이 없는 것보다 나쁘다.
+  `github.io` 는 Public Suffix List 에 있어서 커스텀 도메인 없이도 우리 `ads.txt` 가 유효하다.
+- **`/privacy/` 는 코드를 따라간다.** 수집 항목을 바꾸면(카운터, 픽셀, 댓글, 광고)
+  `src/pages/privacy.astro` 도 같이 고친다. 광고 문단은 `ADS_ENABLED` 에 묶여 있어
+  광고를 켜면 자동으로 같이 켜진다.
 
 `CLAUDE.md` 는 이 파일(`AGENTS.md`)로 향하는 심볼릭 링크다. 내용은 여기서 고친다.
 

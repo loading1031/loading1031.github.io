@@ -1,0 +1,42 @@
+---
+/**
+ * 광고 자리 하나.
+ *
+ * `ADSENSE.client` 가 비어 있으면(= 지금) **아무것도 렌더하지 않는다.**
+ * 주석이나 빈 div 도 남기지 않는다 — 광고 차단기가 잡을 껍데기를 만들지 않는다.
+ *
+ * 광고 로더 스크립트는 `Layout.astro` 가 한 번만 넣는다. 여기서는 자리와
+ * "이 자리를 채워라"는 push 만 한다.
+ */
+import { ADSENSE, ADS_ENABLED } from "@/data/ads";
+
+type Props = {
+  /** `ADSENSE.slots` 의 키 */
+  slot: keyof typeof ADSENSE.slots;
+  class?: string;
+};
+
+const { slot, class: className } = Astro.props;
+const slotId = ADSENSE.slots[slot];
+const show = ADS_ENABLED && slotId !== "";
+---
+
+{
+  show && (
+    <aside class:list={["my-8", className]} aria-label="광고">
+      <p class="text-muted-foreground mb-1 text-xs">광고</p>
+      <ins
+        class="adsbygoogle block"
+        data-ad-client={ADSENSE.client}
+        data-ad-slot={slotId}
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+      <script is:inline data-astro-rerun>
+        // 페이지마다 다시 돌아야 한다. 뷰 트랜지션으로 넘어온 페이지의 광고
+        자리는 // 새 자리라서, push 를 안 하면 빈 칸으로 남는다.
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </aside>
+  )
+}

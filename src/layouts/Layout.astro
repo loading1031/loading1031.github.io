@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar.astro";
 import AgentPixel from "@/components/AgentPixel.astro";
 import { resolveDefaultOgImagePath } from "@/utils/resolveDefaultOgImagePath";
 import { getAssetPath } from "@/utils/withBase";
+import { ADSENSE, ADS_ENABLED } from "@/data/ads";
 import config from "@/config";
 import "@/styles/global.css";
 
@@ -90,6 +91,21 @@ const rssHref = getRelativeLocaleUrl(
 
     <!-- Extra head content injected by child layouts (e.g. JSON-LD, article meta) -->
     <slot name="head" />
+
+    <!--
+      광고 로더. 퍼블리셔 ID 가 없으면(= 지금) 아예 나가지 않는다.
+      자리는 AdSlot.astro 가 잡는다. src/data/ads.ts 참고.
+    -->
+    {
+      ADS_ENABLED && (
+        <script
+          is:inline
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE.client}`}
+          crossorigin="anonymous"
+        />
+      )
+    }
 
     {
       site.googleVerification && (
