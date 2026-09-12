@@ -31,7 +31,7 @@
   @apply max-w-app mx-auto w-full px-5 sm:px-8;
 }
 
-/* 이력서 홈처럼 조금 더 넓게 쓰는 페이지 */
+/* 소개 홈처럼 조금 더 넓게 쓰는 페이지 */
 @utility app-layout-wide {
   @apply mx-auto w-full max-w-4xl px-5 sm:px-8;
 }
@@ -75,7 +75,7 @@
   @apply text-accent font-medium;
 }
 
-/* 이력서 홈의 섹션 제목 */
+/* 소개 홈의 섹션 제목 */
 @utility section-heading {
   @apply border-border mb-5 border-b pb-2 text-sm font-semibold tracking-wider uppercase;
 }

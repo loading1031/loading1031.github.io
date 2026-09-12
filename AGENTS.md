@@ -2,7 +2,7 @@
 
 공부한 내용과 Claude와의 대화에서 얻은 인사이트를 정리해 올리는 개인 기술 블로그.
 [AstroPaper](https://github.com/satnaing/astro-paper) v6 기반 (Astro 7 + Tailwind 4),
-홈은 이력서, 글은 네 섹션으로 나뉜다. GitHub Pages 배포.
+홈은 소개, 글은 네 섹션으로 나뉜다. GitHub Pages 배포.
 
 - 사이트: https://loading1031.github.io
 - 레포: https://github.com/loading1031/loading1031.github.io
@@ -189,14 +189,14 @@ scripts/blog.mjs        # 글 파이프라인 헬퍼 CLI
 src/
   data/sections.ts      # 섹션 정의 (key = 디렉터리 = URL). 하위 섹션은 children 에.
                         #   여기만 고치면 사이드바·홈·목록 페이지·검증이 따라온다
-  data/resume.ts        # 홈(이력서) 내용. 이 파일만 고치면 홈이 바뀐다
+  data/resume.ts        # 홈(소개) 내용. 이 파일만 고치면 홈이 바뀐다
   content/posts/        # 글. project/ study/ cert/ paper/ 하위에 둔다
   content.config.ts     # frontmatter 스키마
   components/Sidebar.astro  # 좌측 고정 네비 (모바일에서는 드로어)
   components/Header.astro   # 모바일 전용 상단 바
   layouts/              # Layout(공통 셸) / PostLayout
   pages/
-    index.astro             # 홈 = 이력서
+    index.astro             # 홈 = 소개
     [section]/index.astro              # 섹션 글 목록      → /study/
     [section]/[subsection]/index.astro # 하위 섹션 글 목록  → /study/database/
     [...slug]/index.astro              # 글 본문          → /study/database/acid/
