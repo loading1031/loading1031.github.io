@@ -6,13 +6,14 @@ tags: ["Fundamentals of Database Engineering"]
 draft: true
 ---
 
-[섹션4 정리 글](/study/database/section-4-indexing/)을 쓰면서 가장 안 믿겼던 것은
+[섹션4: 데이터베이스 인덱싱](/study/database/section-4-indexing/)과
+[섹션4: key column 과 non-key column](/study/database/section-4-key-vs-nonkey/)을 쓰면서
+가장 안 믿겼던 것은
 "인덱스 안에 값이 통째로 복사돼 들어 있다" 와 "non-key column 은 내부 페이지에서 잘려 나간다"
 두 문장이었다. 둘 다 <abbr title="PostgreSQL 기본 제공 확장. 페이지 안의 바이트를 그대로 읽어서 보여 준다. 운영 DB 에서 켤 일은 거의 없고, 구조를 확인할 때 쓴다.">pageinspect</abbr> 로 페이지를 직접 열면 눈으로 확인된다.
 
-세 부분으로 나눴다. **1부**는 인덱스가 파일 안에서 어떻게 생겼는지,
-**2부**는 `key column` 과 `non-key column` 이 어디서 갈리는지,
-**3부**는 중복 제거와 플래너의 선택이다. 1부를 건너뛰면 2부의 덤프가 안 읽힌다.
+세 부분으로 나눴다. **1부**는 구조 글에, **2·3부**는 key/non-key 글에 붙는다.
+1부를 건너뛰면 2부의 덤프가 안 읽힌다.
 
 아래 출력은 전부 PostgreSQL 17 컨테이너에서 직접 받은 것이다.
 난수를 쓰지 않아서 그대로 따라 하면 같은 값이 나온다.
@@ -233,7 +234,7 @@ select * from growlog;
 
 루트가 `1 → 3 → 412` 로 옮겨 다닌다. 그래서 0번 메타 페이지에 "루트는 412번"이라고 적어 둔다.
 
-### 페이지 안에서 lp 와 항목은 반대 방향으로 자란다
+### 인덱스 페이지 안에서 lp 와 항목은 반대 방향으로 자란다
 
 **확인할 내용** — 항목이 쌓인 순서는 삽입 순서이고, 정렬을 들고 있는 건 라인 포인터 배열이라는 것.
 
@@ -252,9 +253,10 @@ from (select get_raw_page('slot_a',1) as p) g, bt_page_items('slot_a',1) i;
 select lower, upper from page_header(get_raw_page('slot_a',1));
 ```
 
-**결과**
+**결과** — `slot_a` **인덱스 파일**의 1번 페이지다
 
 ```text
+[인덱스 페이지]
  lp 번호 | 항목 물리주소 | 키 값
        1 |          8160 |    10
        2 |          8144 |    20
@@ -272,6 +274,7 @@ insert into slot values (15);
 **결과**
 
 ```text
+[인덱스 페이지]
  lp 번호 | 항목 물리주소 | 키 값
        1 |          8160 |    10
        2 |          8112 |    15        ← 가장 최근 = 가장 작은 주소
@@ -758,7 +761,8 @@ docker rm -f pglab
 
 ## 참고
 
-- [섹션4: 데이터베이스 인덱싱](/study/database/section-4-indexing/) — 이 실습의 정리 글
+- [섹션4: 데이터베이스 인덱싱](/study/database/section-4-indexing/) — 1부의 정리 글
+- [섹션4: key column 과 non-key column](/study/database/section-4-key-vs-nonkey/) — 2·3부의 정리 글
 - [섹션3 실습: 페이지 안을 직접 열어보기](/study/database/section-3-internals-lab/) — 힙 쪽 페이지 구조
 - [pageinspect](https://www.postgresql.org/docs/current/pageinspect.html) — PostgreSQL 공식 문서
 - [nbtree README](https://github.com/postgres/postgres/blob/master/src/backend/access/nbtree/README) — 피벗 튜플, 접미 절단, 힙 TID 타이브레이커
