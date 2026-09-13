@@ -190,6 +190,7 @@ src/
   data/sections.ts      # 섹션 정의 (key = 디렉터리 = URL). 하위 섹션은 children 에.
                         #   여기만 고치면 사이드바·홈·목록 페이지·검증이 따라온다
   data/resume.ts        # 홈(소개) 내용. 이 파일만 고치면 홈이 바뀐다
+  data/friends.ts       # 친구(= GitHub 맞팔) 설정. username 을 비우면 기능이 꺼진다
   content/posts/        # 글. project/ study/ cert/ paper/ 하위에 둔다
   content.config.ts     # frontmatter 스키마
   components/Sidebar.astro  # 좌측 고정 네비 (모바일에서는 드로어)
@@ -261,6 +262,21 @@ src/
   - `doctor --build` 의 **댓글 term 검사** — 글 페이지의 `data-term` 이 그 페이지의
     실제 주소와 같은지 빌드 결과물에서 확인한다. term 은 Astro 라우팅 설정
     (`trailingSlash`, i18n 접두사)을 타고 만들어져서 단위 테스트로는 못 잡는다
+- **친구 = GitHub 맞팔이다.** GitHub 에는 친구 기능이 없다 — 팔로우가 단방향이고
+  상호 관계를 알려주는 API 도 없다. 그래서 `followers` 와 `following` 을 각각 읽어
+  **교집합**을 구한다(`src/utils/fetchMutualFollows.ts`). 댓글 수와 마찬가지로
+  **빌드 시점 값**이라 새 맞팔은 다음 배포 때 올라온다. 공개 API 라 토큰이 없어도
+  읽히고(미인증 시간당 60회), 실패하면 목록만 빠지고 빌드는 성공한다.
+  `src/data/friends.ts` 의 `username` 을 비우면 페이지도 사이드바 링크도 안 나간다.
+  **아바타는 일부러 안 쓴다** — 핫링크하면 방문자 브라우저가 GitHub 에 접속하게 되므로
+  켜려면 `/privacy/` 에 외부 접속 항목을 같이 추가해야 한다.
+- **친구 블로그는 `FRIEND_SITES` 에 손으로 적는다.** 세 단계로 나온다 —
+  `feed` 가 있으면 **최신 글까지**, `url` 만 있으면 **블로그 링크만**,
+  아무것도 없으면 GitHub 프로필 링크만. 플랫폼은 상관없다(velog·티스토리·Medium·
+  Jekyll 다 RSS/Atom 이면 읽힌다, `src/utils/fetchFriendFeeds.ts`).
+  자동으로 찾으려면 빌드마다 남의 서버를 여러 경로로 찔러야 해서 느리고 잘 깨지고
+  무엇보다 실례다. 남의 서버를 읽는 일이라 **한 곳이 죽어도 그 친구만 빠지고 빌드는
+  성공**하며, 응답이 없으면 8초에 끊는다. 맞팔이 아닌 사람은 등록돼 있어도 안 읽는다.
 - **광고는 준비만 돼 있고 꺼져 있다.** `src/data/ads.ts` 의 `client` 가 비면 광고
   스크립트도 광고 자리도 아예 안 나간다(빌드 결과에 `adsbygoogle` 0건). 승인받으면
   거기 두 값만 채운다. **`public/ads.txt` 는 승인 전에 만들지 않는다** — 내용이 빈

@@ -4,6 +4,7 @@ import { getCollection } from "astro:content";
 import IconArchive from "@/assets/icons/IconArchive.svg";
 import IconHash from "@/assets/icons/IconHash.svg";
 import IconSearch from "@/assets/icons/IconSearch.svg";
+import IconUsers from "@/assets/icons/IconUsers.svg";
 import IconRss from "@/assets/icons/IconRss.svg";
 import IconX from "@/assets/icons/IconX.svg";
 import type { MarkdownHeading } from "astro";
@@ -13,6 +14,8 @@ import ThemeToggle from "./ThemeToggle.astro";
 import TableOfContents from "./TableOfContents.astro";
 import { SECTIONS, isUnderSection, sectionPathOf } from "@/data/sections";
 import { profile } from "@/data/resume";
+import { FRIENDS_ENABLED } from "@/data/friends";
+import { getMutualFollows } from "@/utils/getMutualFollows";
 import { postFilter } from "@/utils/postFilter";
 import { stripBase, stripLocale } from "@/utils/withBase";
 import { useTranslations } from "@/i18n";
@@ -21,6 +24,9 @@ import config from "@/config";
 type Props = { headings?: MarkdownHeading[] };
 
 const { headings } = Astro.props;
+
+// 친구(= GitHub 맞팔). 빌드 시점에 한 번 읽고 캐시되므로 페이지마다 다시 부르지 않는다.
+const friends = FRIENDS_ENABLED ? await getMutualFollows() : [];
 
 const { site, features } = config;
 
@@ -197,6 +203,20 @@ const initials = profile.name.slice(0, 2);
         >
           <IconSearch class="size-4 opacity-70" />
           {t.nav.search}
+        </a>
+      )
+    }
+    {
+      FRIENDS_ENABLED && (
+        <a
+          href={getRelativeLocaleUrl(locale, "friends")}
+          class:list={["nav-item", { "nav-item-active": isActive("/friends") }]}
+        >
+          <IconUsers class="size-4 opacity-70" />
+          친구
+          <span class="text-muted-foreground ms-auto text-xs tabular-nums">
+            {friends.length || ""}
+          </span>
         </a>
       )
     }

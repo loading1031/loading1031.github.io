@@ -1,0 +1,174 @@
+---
+/**
+ * 친구 = GitHub 맞팔.
+ *
+ * 목록은 자동으로 구하고(`getMutualFollows`), 블로그는 `data/friends.ts` 의
+ * `FRIEND_SITES` 에 적힌 사람만 나온다. 세 단계다.
+ *
+ *   피드 있음 → 블로그 이름 + 최신 글
+ *   블로그만  → 블로그 링크
+ *   없음      → GitHub 프로필 링크
+ *
+ * 둘 다 빌드 시점 값이라 다음 배포 때 갱신된다.
+ * 아바타는 쓰지 않는다 — 핫링크하면 방문자 브라우저가 GitHub 에 접속하게 되고,
+ * 그러면 `/privacy/` 에 외부 접속 항목을 추가해야 한다.
+ */
+import { getRelativeLocaleUrl } from "astro:i18n";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Breadcrumb from "@/components/Breadcrumb.astro";
+import Main from "@/components/Main.astro";
+import Footer from "@/components/Footer.astro";
+import { FRIENDS_ENABLED, FRIEND_SITES, githubProfileUrl } from "@/data/friends";
+import { getMutualFollows } from "@/utils/getMutualFollows";
+import { getFriendFeeds } from "@/utils/getFriendFeeds";
+import config from "@/config";
+
+const locale = Astro.currentLocale ?? config.site.lang;
+
+const notFoundUrl = getRelativeLocaleUrl(locale, "404");
+if (!FRIENDS_ENABLED && notFoundUrl) {
+  return Astro.rewrite(notFoundUrl);
+}
+
+const friends = await getMutualFollows();
+const feeds = await getFriendFeeds();
+
+/** 주소에서 도메인만. 링크 옆에 뭘 여는지 보여 주려고 쓴다. */
+const hostOf = (url: string) => url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+
+// 미리보기가 있는 사람 → 블로그만 있는 사람 → 나머지 순으로 쌓는다.
+const withPosts = friends.filter(login => feeds.has(login));
+const siteOnly = friends.filter(
+  login => !feeds.has(login) && FRIEND_SITES[login]?.url
+);
+const rest = friends.filter(login => !feeds.has(login) && !FRIEND_SITES[login]?.url);
+---
+
+<Layout
+  title={`친구 | ${config.site.title}`}
+  description="GitHub 에서 서로 팔로우하고 있는 사람들과 그들의 최근 글."
+>
+  <Header />
+
+  <Breadcrumb />
+
+  <Main pageTitle="친구" pageDesc="서로 팔로우하고 있는 사람들과 그들의 최근 글.">
+    {
+      withPosts.length > 0 && (
+        <ul class="mb-12 space-y-8">
+          {withPosts.map(login => {
+            const feed = feeds.get(login)!;
+            const site = FRIEND_SITES[login];
+            return (
+              <li class="border-border border-b pb-8 last:border-0">
+                <div class="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <a
+                    href={githubProfileUrl(login)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="focus-outline hover:text-accent font-semibold transition-colors"
+                  >
+                    @{login}
+                  </a>
+                  {site?.url && (
+                    <a
+                      href={site.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="focus-outline text-muted-foreground hover:text-accent text-sm transition-colors"
+                    >
+                      {feed.siteTitle ?? hostOf(site.url)}
+                    </a>
+                  )}
+                </div>
+                <ul class="space-y-1.5">
+                  {feed.items.map(item => (
+                    <li class="flex gap-2 text-sm">
+                      <span class="text-muted-foreground select-none">·</span>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="focus-outline hover:text-accent transition-colors"
+                      >
+                        {item.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })}
+        </ul>
+      )
+    }
+
+    {
+      siteOnly.length > 0 && (
+        <>
+          <h2 class="mb-4 text-sm font-semibold">블로그</h2>
+          <ul class="mb-10 space-y-2">
+            {siteOnly.map(login => (
+              <li class="flex flex-wrap items-baseline gap-x-3 text-sm">
+                <a
+                  href={githubProfileUrl(login)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="focus-outline hover:text-accent font-medium transition-colors"
+                >
+                  @{login}
+                </a>
+                <a
+                  href={FRIEND_SITES[login].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="focus-outline text-muted-foreground hover:text-accent transition-colors"
+                >
+                  {hostOf(FRIEND_SITES[login].url)}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )
+    }
+
+    {
+      rest.length > 0 && (
+        <>
+          <h2 class="mb-4 text-sm font-semibold">
+            그 밖의 친구
+            <span class="text-muted-foreground ms-2 font-normal tabular-nums">
+              {rest.length}명
+            </span>
+          </h2>
+          <ul class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+            {rest.map(login => (
+              <li>
+                <a
+                  href={githubProfileUrl(login)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="focus-outline hover:text-accent block truncate py-1 text-sm transition-colors"
+                >
+                  @{login}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )
+    }
+
+    {
+      friends.length === 0 && (
+        <p class="text-muted-foreground text-sm">
+          아직 맞팔인 사람이 없거나, 빌드 때 GitHub 을 읽지 못했다.
+        </p>
+      )
+    }
+  </Main>
+
+  <Footer />
+</Layout>
