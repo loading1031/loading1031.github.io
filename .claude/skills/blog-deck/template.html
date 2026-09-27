@@ -1,0 +1,842 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PostgreSQL 인덱스 뜯어보기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
+<style>
+  /* 발표용 · 라이트 고정. 뷰어가 다크여도 흰 화면으로 나간다 */
+  :root {
+    color-scheme: light;
+
+    --paper:       #f6f7f9;
+    --surface:     #ffffff;
+    --ink:         #12161c;
+    --muted:       #5d6673;
+    --faint:       #8a93a1;
+    --rule:        #dfe3ea;
+    --rule-strong: #c6ccd7;
+    --accent:      #2f5fd6;
+    --accent-soft: #e8eefb;
+    --slot:        #eef0f4;
+
+    --sans: "IBM Plex Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --rail: 264px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 400;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    display: grid;
+    grid-template-columns: var(--rail) minmax(0, 1fr);
+    align-items: start;
+    min-height: 100vh;
+  }
+
+  /* ── 사이드바 ─────────────────────────────── */
+  .rail {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    border-inline-end: 1px solid var(--rule);
+    background: var(--surface);
+    padding-block: 34px 24px;
+    padding-inline: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+
+  .brand { display: flex; flex-direction: column; gap: 5px; }
+
+  .brand .eyebrow {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  .brand h1 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -.012em;
+    line-height: 1.35;
+    text-wrap: balance;
+  }
+
+  .toc { display: flex; flex-direction: column; gap: 1px; }
+
+  .toc a {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 10px;
+    align-items: baseline;
+    padding: 8px 10px;
+    border-radius: 5px;
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 13.5px;
+    line-height: 1.4;
+    transition: background .14s ease, color .14s ease;
+  }
+
+  .toc a .n {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .toc a:hover { background: var(--accent-soft); color: var(--ink); }
+
+  .toc a[aria-current="true"] {
+    background: var(--accent-soft);
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .toc a[aria-current="true"] .n { color: var(--accent); }
+
+  .toc a.sub {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 4px 10px 4px 32px;
+    font-size: 12px;
+    color: var(--faint);
+    line-height: 1.35;
+  }
+  .toc a.sub:hover { background: var(--accent-soft); color: var(--ink); }
+  .toc a.sub[aria-current="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+  .toc a.parent-on { color: var(--ink); }
+  .body [id] { scroll-margin-top: 20px; }
+
+  .rail footer {
+    margin-top: auto;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--faint);
+    letter-spacing: .04em;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+  }
+
+  /* ── 본문 ─────────────────────────────────── */
+  main {
+    padding-inline: clamp(20px, 5vw, 72px);
+    padding-block: 56px 96px;
+    max-width: 980px;
+  }
+
+  .deck-head { margin-bottom: 52px; }
+
+  .deck-head .kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 12px;
+  }
+
+  .deck-head h2 {
+    margin: 0 0 14px;
+    font-size: clamp(28px, 4.4vw, 40px);
+    font-weight: 600;
+    letter-spacing: -.028em;
+    line-height: 1.18;
+    text-wrap: balance;
+  }
+
+  .deck-head p {
+    margin: 0;
+    max-width: 60ch;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  section {
+    border-top: 1px solid var(--rule);
+    padding-block: 40px;
+    scroll-margin-top: 24px;
+  }
+
+  .sec-head {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 8px;
+    align-items: baseline;
+  }
+
+  .sec-head .num {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: .06em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sec-head h3 {
+    margin: 0;
+    font-size: clamp(20px, 2.6vw, 25px);
+    font-weight: 600;
+    letter-spacing: -.02em;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
+  .sec-head .note {
+    grid-column: 2;
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+    max-width: 58ch;
+  }
+
+  .slot {
+    grid-column: 2;
+    margin-top: 20px;
+    border: 1px dashed var(--rule-strong);
+    border-radius: 6px;
+    background: var(--slot);
+    padding: 22px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    color: var(--faint);
+  }
+
+  .slot .tag {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    padding: 3px 7px;
+    color: var(--muted);
+  }
+
+  .slot .what { font-size: 13.5px; }
+
+  .slot.wide { min-height: 128px; align-items: flex-start; }
+
+  /* ── 채워진 본문 ──────────────────────────── */
+  .body {
+    grid-column: 2;
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .prose { display: flex; flex-direction: column; gap: 13px; max-width: 64ch; }
+  .prose p { margin: 0; font-size: 14.5px; }
+  .prose p.lead { font-size: 15.5px; font-weight: 500; letter-spacing: -.012em; }
+  .prose p.note-inline { font-size: 13px; color: var(--muted); }
+
+  code {
+    font-family: var(--mono);
+    font-size: .88em;
+    background: var(--slot);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  figure {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .scroller { overflow-x: auto; margin-inline: -4px; padding-inline: 4px; }
+
+  figure svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-width: 620px;
+    color: var(--ink);
+  }
+
+  figure svg text { font-family: var(--sans); fill: currentColor; font-size: 11.5px; }
+  figure svg text.m { font-family: var(--mono); }
+  figure svg .f { opacity: .6; }
+  figure svg .box { fill: var(--slot); stroke: var(--rule-strong); stroke-width: 1; }
+  figure svg .plain { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 1; }
+  figure svg .hl { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.6; }
+  figure svg .hlt { fill: var(--accent); }
+  figure svg .line { stroke: currentColor; opacity: .45; fill: none; }
+  figure svg .rule { stroke: var(--rule-strong); fill: none; }
+  figure svg .dash { stroke: currentColor; opacity: .4; fill: none; stroke-dasharray: 4 3; }
+  figure svg .acc { stroke: var(--accent); opacity: .85; fill: none; }
+
+  figcaption { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+  /* 복잡도 비교 */
+  .cmp {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .cmp > div {
+    background: var(--surface);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .cmp h4 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: -.01em; }
+  .cmp .big { font-family: var(--mono); font-size: 20px; font-weight: 500; line-height: 1.2; }
+  .cmp .big.on { color: var(--accent); }
+  .cmp p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+  /* 스위치 */
+  .switch {
+    position: relative;
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    background: var(--slot);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 3px;
+    --i: 0;
+  }
+  .switch .thumb {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: calc((100% - 6px) / 3);
+    background: var(--surface);
+    border: 1px solid var(--rule-strong);
+    border-radius: 6px;
+    transform: translateX(calc(var(--i) * 100%));
+    transition: transform .24s cubic-bezier(.4, 0, .2, 1);
+    pointer-events: none;
+  }
+  .switch button {
+    position: relative;
+    z-index: 1;
+    appearance: none;
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: 12.5px;
+    color: var(--muted);
+    padding: 8px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .16s ease;
+  }
+  .switch button[aria-selected="true"] { color: var(--ink); font-weight: 500; }
+  .switch[data-tabs="2"] .thumb { width: calc((100% - 6px) / 2); }
+  .switch[data-tabs="4"] .thumb { width: calc((100% - 6px) / 4); }
+
+  .panel { display: flex; flex-direction: column; gap: 16px; }
+
+  /* 애니메이션 도식 */
+  .anim { display: flex; flex-direction: column; gap: 12px; }
+  .anim .controls {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    padding-top: 4px; border-top: 1px solid var(--rule);
+  }
+  .anim button {
+    appearance: none; font: inherit; font-size: 12.5px;
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--rule-strong); border-radius: 6px;
+    padding: 5px 12px; cursor: pointer;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .anim button:hover { border-color: var(--accent); color: var(--accent); }
+  .anim button[disabled] { opacity: .45; cursor: default; }
+  .anim button[disabled]:hover { border-color: var(--rule-strong); color: var(--ink); }
+  .anim .readout {
+    margin-inline-start: auto; font-family: var(--mono); font-size: 12px;
+    color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .anim .readout b { color: var(--accent); font-weight: 500; }
+
+  svg .cell { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 1; transition: fill .18s ease, stroke .18s ease; }
+  svg .cell.done { fill: var(--accent-soft); stroke: var(--accent); stroke-opacity: .5; }
+  svg .cell.now  { fill: var(--accent); stroke: var(--accent); }
+  svg .celltx { fill: var(--ink); font-family: var(--mono); font-size: 9.5px; transition: fill .18s ease; }
+  svg .cell.now + .celltx, svg .celltx.on { fill: var(--surface); }
+  svg .beam { stroke: var(--accent); stroke-width: 1.8; fill: none; opacity: 0; transition: opacity .18s ease; }
+  svg .beam.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    svg .cell, svg .celltx, svg .beam { transition: none; }
+  }
+
+  /* 공식 */
+  .formula {
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .formula .eyebrow {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .steps { display: flex; flex-direction: column; gap: 8px; }
+  .steps > div {
+    display: grid;
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+    padding-block: 7px;
+    border-top: 1px solid var(--rule);
+  }
+  .steps .k {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .steps .v { font-family: var(--mono); font-size: 12.5px; line-height: 1.6; }
+  .steps .v em { font-style: normal; font-family: var(--sans); color: var(--muted); font-size: 12px; }
+  .formula > p { margin: 0; font-size: 13.5px; color: var(--muted); max-width: 64ch; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  th, td { text-align: right; padding: 8px 10px; border-top: 1px solid var(--rule); }
+  th:first-child, td:first-child { text-align: left; }
+  thead th {
+    border-top: 0;
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: .04em;
+    color: var(--faint);
+    text-transform: uppercase;
+    font-family: var(--mono);
+  }
+  tbody td { font-family: var(--mono); }
+  tbody tr.on td { color: var(--accent); }
+
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: minmax(0, 1fr); }
+    .rail {
+      position: static;
+      height: auto;
+      border-inline-end: 0;
+      border-block-end: 1px solid var(--rule);
+      padding-block: 22px 16px;
+      gap: 16px;
+    }
+    .toc {
+      flex-direction: row;
+      overflow-x: auto;
+      gap: 6px;
+      padding-bottom: 4px;
+    }
+    .toc a {
+      grid-template-columns: auto;
+      white-space: nowrap;
+      border: 1px solid var(--rule);
+      padding: 6px 11px;
+      font-size: 12.5px;
+    }
+    .toc a .n { display: none; }
+    .toc a.sub { display: none; }
+    .rail footer { display: none; }
+    main { padding-block: 36px 72px; }
+    .sec-head { grid-template-columns: minmax(0, 1fr); }
+    .sec-head .num { grid-column: 1; }
+    .sec-head h3, .sec-head .note, .slot, .body { grid-column: 1; }
+    .switch { display: grid; width: 100%; }
+    .switch button { padding-inline: 8px; }
+  }
+
+  a:focus-visible, .toc a:focus-visible, .switch button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; scroll-behavior: auto !important; }
+  }
+
+  html { scroll-behavior: smooth; }
+</style>
+
+<div class="shell">
+  <nav class="rail" aria-label="목차">
+    <div class="brand">
+      <p class="eyebrow">주제 · 버전</p>
+      <h1>덱 제목</h1>
+    </div>
+
+    <div class="toc" id="toc">
+      <a href="#s1"><span class="n">01</span><span>첫 절</span></a>
+      <a class="sub" data-parent="s1" href="#s1-1"><span>소제목 — 문장으로</span></a>
+      <a class="sub" data-parent="s1" href="#s1-2"><span>소제목 — 문장으로</span></a>
+      <a href="#s2"><span class="n">02</span><span>둘째 절</span></a>
+      <a class="sub" data-parent="s2" href="#sw"><span>탭으로 보는 것</span></a>
+    </div>
+
+    <footer>
+      <span>2 sections</span>
+      <span>draft</span>
+    </footer>
+  </nav>
+
+  <main>
+    <div class="deck-head">
+      <p class="kicker">발표 자료</p>
+      <h2>한 줄로 요약한 제목</h2>
+      <p>무엇을 어디까지 다루는지. 수치의 출처(무슨 버전에서 직접 재었는지)를 여기서 밝힌다.</p>
+    </div>
+
+    <!-- ══ 01 ══════════════════════════════════ -->
+    <section id="s1">
+      <div class="sec-head">
+        <span class="num">01</span>
+        <h3>첫 절</h3>
+        <p class="note">이 절이 무엇을 보여주는지 한 문장.</p>
+
+        <!-- 골격 단계에서는 .slot 만 둔다. 채울 때 .slot 을 .body 로 바꾼다 -->
+        <div class="slot wide">
+          <span class="tag">figure</span>
+          <span class="what">여기에 무엇이 들어갈지 한 줄</span>
+        </div>
+
+        <!-- 채운 뒤의 모습
+        <div class="body">
+          <div class="prose" id="s1-1">
+            <p class="lead">결론을 먼저 쓴다.</p>
+            <p>근거. <code>식별자</code> 는 이렇게 감싼다.</p>
+            <p class="note-inline">곁가지는 작은 글씨로.</p>
+          </div>
+
+          <figure>
+            <div class="scroller">
+              <svg viewBox="0 0 760 300" role="img" aria-label="스크린리더가 읽을 그림 설명">
+                …
+              </svg>
+            </div>
+            <figcaption>그림이 말하려는 요점 한두 문장.</figcaption>
+          </figure>
+
+          <div class="cmp">
+            <div><h4>이쪽</h4><span class="big">O(N)</span><p>설명.</p></div>
+            <div><h4>저쪽</h4><span class="big on">O(log N)</span><p>설명.</p></div>
+          </div>
+
+          <div class="formula" id="s1-2">
+            <p class="eyebrow">계산</p>
+            <div class="steps">
+              <div><span class="k">f</span><span class="v">= 8000 B ÷ 20 B ≈ 400 <em>— 단서</em></span></div>
+            </div>
+            <p>공식이 말하는 바.</p>
+            <div class="scroller">
+              <table>
+                <thead><tr><th>조건</th><th>값</th></tr></thead>
+                <tbody>
+                  <tr><td>보통</td><td>1</td></tr>
+                  <tr class="on"><td>여기가 요점</td><td>2</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        -->
+      </div>
+    </section>
+
+    <!-- ══ 02 ══════════════════════════════════ -->
+    <section id="s2">
+      <div class="sec-head">
+        <span class="num">02</span>
+        <h3>둘째 절</h3>
+        <p class="note">같은 대상을 층위를 바꿔 가며 본다.</p>
+
+        <div class="body">
+          <!-- 탭: 같은 것을 다른 층위로 (data-tabs 로 2·4개도 가능) -->
+          <div class="switch" role="tablist" aria-label="무엇을 전환하는지" id="sw">
+            <span class="thumb" aria-hidden="true"></span>
+            <button type="button" role="tab" id="t-a" aria-controls="p-a" aria-selected="true">논리</button>
+            <button type="button" role="tab" id="t-b" aria-controls="p-b" aria-selected="false">물리</button>
+            <button type="button" role="tab" id="t-c" aria-controls="p-c" aria-selected="false">확대</button>
+          </div>
+
+          <div class="panel" id="p-a" role="tabpanel" aria-labelledby="t-a">
+            <figure>…</figure>
+          </div>
+          <div class="panel" id="p-b" role="tabpanel" aria-labelledby="t-b" hidden>
+            <figure>…</figure>
+          </div>
+          <div class="panel" id="p-c" role="tabpanel" aria-labelledby="t-c" hidden>
+            <figure>…</figure>
+          </div>
+
+          <!-- 단계 애니메이션. svg 안의 id 규칙은 SKILL.md 를 본다 -->
+          <figure>
+            <div class="anim" data-anim="demo">
+              <div class="scroller">
+                <svg viewBox="0 0 760 300" role="img" aria-label="무엇이 어떤 순서로 읽히는지">
+                  <path id="beam-demo" class="beam"></path>
+                  <rect id="ix-demo-0-0" class="cell" x="24" y="44" width="46" height="18" rx="2"></rect>
+                  <text id="it-demo-0-0" class="celltx" x="47" y="57" text-anchor="middle">7</text>
+                  <rect id="hb-demo-0" class="cell" x="430" y="44" width="286" height="30" rx="3"></rect>
+                  <rect id="hs-demo-0-0" class="cell" x="492" y="50" width="46" height="18" rx="2"></rect>
+                  <text id="ht-demo-0-0" class="celltx" x="515" y="63" text-anchor="middle">a=3</text>
+                </svg>
+              </div>
+              <div class="controls">
+                <button type="button" data-act="play" data-anim="demo">▶ 재생</button>
+                <button type="button" data-act="step" data-anim="demo">한 단계</button>
+                <button type="button" data-act="reset" data-anim="demo">처음으로</button>
+                <span class="readout" id="ro-demo">힙 접근 <b>0</b>회</span>
+              </div>
+            </div>
+            <figcaption>이 움직임이 보여주는 요점.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  /* ── 목차 스크롤 추적 (대·소 두 단) ── */
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+    if (!links.length) return;
+
+    var items = [];
+    links.forEach(function (a) {
+      var el = document.getElementById(a.getAttribute('href').slice(1));
+      if (el) items.push({ link: a, el: el });
+    });
+    if (!items.length) return;
+
+    function mark() {
+      var line = window.scrollY + 120;
+      var cur = items[0];
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].el.getBoundingClientRect().top + window.scrollY <= line) cur = items[i];
+      }
+      links.forEach(function (a) {
+        a.removeAttribute('aria-current');
+        a.classList.remove('parent-on');
+      });
+      cur.link.setAttribute('aria-current', 'true');
+      var parent = cur.link.getAttribute('data-parent');
+      if (parent) {
+        var p = document.querySelector('#toc a[href="#' + parent + '"]');
+        if (p) p.classList.add('parent-on');
+      }
+      // 현재 절이 사이드바 밖으로 나가면 따라 올린다
+      var rail = document.querySelector('.rail');
+      if (rail && rail.scrollHeight > rail.clientHeight) {
+        var r = cur.link.getBoundingClientRect(), rr = rail.getBoundingClientRect();
+        if (r.top < rr.top + 8 || r.bottom > rr.bottom - 8) {
+          rail.scrollTop += (r.top - rr.top) - rail.clientHeight / 2;
+        }
+      }
+    }
+
+    var ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(function () { mark(); ticking = false; });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    mark();
+  })();
+
+  (function () {
+    var switches = Array.prototype.slice.call(document.querySelectorAll('.switch[role="tablist"]'));
+    switches.forEach(function (sw) {
+      var tabs = Array.prototype.slice.call(sw.querySelectorAll('button[role="tab"]'));
+      if (!tabs.length) return;
+
+      function select(i) {
+        tabs.forEach(function (t, j) {
+          var on = i === j;
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+          t.setAttribute('tabindex', on ? '0' : '-1');
+          var panel = document.getElementById(t.getAttribute('aria-controls'));
+          if (panel) panel.hidden = !on;
+        });
+        sw.style.setProperty('--i', String(i));
+      }
+
+      tabs.forEach(function (t, i) {
+        t.addEventListener('click', function () { select(i); });
+        t.addEventListener('keydown', function (e) {
+          var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+          if (!d) return;
+          e.preventDefault();
+          var n = (i + d + tabs.length) % tabs.length;
+          select(n);
+          tabs[n].focus();
+        });
+      });
+
+      select(0);
+    });
+  })();
+
+  /* ── 03 · 인덱스 ↔ 힙 탐색 애니메이션 ── */
+  (function () {
+    /* 이 덱의 애니메이션 단계. 절마다 키를 하나씩 두고, 각 단계는
+       { ix:[리프,슬롯], heap:블록번호, slots:[슬롯…], bit:비트번호, sort:true, phase:2 }
+       중 필요한 것만 담는다. 아래는 형태를 보여주는 예시다. */
+    var STEPS = {
+      "demo": [
+        { "ix": [0, 0], "heap": 0, "slots": [0] },
+        { "ix": [0, 1], "heap": 2, "slots": [1] }
+      ]
+    };
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    Object.keys(STEPS).forEach(function (key) {
+      var root = document.querySelector('.anim[data-anim="' + key + '"]');
+      if (!root) return;
+      var svg = root.querySelector('svg');
+      var readout = document.getElementById('ro-' + key);
+      var beam = document.getElementById('beam-' + key);
+      var list = STEPS[key];
+      var i = -1, timer = null;
+
+      function el(id) { return document.getElementById(id); }
+      function cls(node, name, on) { if (node) node.classList.toggle(name, on); }
+
+      function paint() {
+        svg.querySelectorAll('.cell').forEach(function (c) { c.classList.remove('now'); });
+        svg.querySelectorAll('.celltx').forEach(function (t) { t.classList.remove('on'); });
+        if (beam) beam.classList.remove('on');
+
+        var blocks = {}, heapHits = 0, phase2 = 0, sorted = false;
+        for (var n = 0; n <= i; n++) {
+          var st = list[n];
+          if (st.sort) sorted = true;
+          if (st.ix) { cls(el('ix-' + key + '-' + st.ix[0] + '-' + st.ix[1]), 'done', true); }
+          if (st.bit !== undefined) { cls(el('bm-' + key + '-' + st.bit), 'done', true); }
+          if (st.heap !== undefined) {
+            cls(el('hb-' + key + '-' + st.heap), 'done', true);
+            blocks[st.heap] = 1; heapHits++;
+            if (st.phase === 2) phase2++;
+            (st.slots || []).forEach(function (j) {
+              cls(el('hs-' + key + '-' + st.heap + '-' + j), 'done', true);
+            });
+          }
+        }
+
+        var cur = list[i];
+        if (cur) {
+          if (cur.sort) {
+            svg.querySelectorAll('[id^="bm-bmp-"]').forEach(function (c) { c.classList.add('now'); });
+            svg.querySelectorAll('[data-raw]').forEach(function (t) { t.classList.add('on'); });
+          }
+          if (cur.ix) {
+            var ic = el('ix-' + key + '-' + cur.ix[0] + '-' + cur.ix[1]);
+            cls(ic, 'now', true); cls(el('it-' + key + '-' + cur.ix[0] + '-' + cur.ix[1]), 'on', true);
+          }
+          if (cur.bit !== undefined) {
+            cls(el('bm-' + key + '-' + cur.bit), 'now', true);
+            cls(el('bt-' + key + '-' + cur.bit), 'on', true);
+          }
+          if (cur.heap !== undefined) {
+            cls(el('hb-' + key + '-' + cur.heap), 'now', true);
+            (cur.slots || []).forEach(function (j) {
+              cls(el('hs-' + key + '-' + cur.heap + '-' + j), 'now', true);
+              cls(el('ht-' + key + '-' + cur.heap + '-' + j), 'on', true);
+            });
+          }
+          if (beam && cur.ix && cur.heap !== undefined) {
+            var a = el('ix-' + key + '-' + cur.ix[0] + '-' + cur.ix[1]);
+            var b = el('hb-' + key + '-' + cur.heap);
+            if (a && b) {
+              var ax = +a.getAttribute('x') + +a.getAttribute('width');
+              var ay = +a.getAttribute('y') + +a.getAttribute('height') / 2;
+              var bx = +b.getAttribute('x');
+              var by = +b.getAttribute('y') + +b.getAttribute('height') / 2;
+              beam.setAttribute('d', 'M' + ax + ',' + ay + ' C' + (ax + 60) + ',' + ay + ' ' + (bx - 60) + ',' + by + ' ' + bx + ',' + by);
+              beam.classList.add('on');
+            }
+          }
+        }
+
+        /* sort 단계에서 글자가 바뀌는 칸: data-raw / data-sorted 를 둔 text 에만 적용된다 */
+        svg.querySelectorAll('[data-raw]').forEach(function (t) {
+          t.textContent = sorted ? t.getAttribute('data-sorted') : t.getAttribute('data-raw');
+        });
+
+        /* 아래 읽어 주는 숫자. 덱마다 세는 것이 다르므로 여기를 절에 맞춰 고쳐 쓴다.
+           쓸 수 있는 값: heapHits(힙 접근 횟수) · nBlocks(서로 다른 블록 수)
+                          phase2(phase:2 로 표시한 단계만 센 횟수) · sorted · list[i] */
+        var nBlocks = Object.keys(blocks).length;
+        if (readout) {
+          readout.innerHTML = '힙 접근 <b>' + heapHits + '</b>회 · 블록 <b>' + nBlocks + '</b>개';
+        }
+      }
+
+      function stop() { if (timer) { clearInterval(timer); timer = null; }
+        root.querySelector('[data-act="play"]').textContent = '▶ 재생'; }
+
+      function next() {
+        if (i >= list.length - 1) { stop(); return; }
+        i++; paint();
+      }
+
+      root.querySelector('[data-act="step"]').addEventListener('click', function () { stop(); next(); });
+      root.querySelector('[data-act="reset"]').addEventListener('click', function () { stop(); i = -1; paint(); });
+      root.querySelector('[data-act="play"]').addEventListener('click', function () {
+        if (timer) { stop(); return; }
+        if (i >= list.length - 1) i = -1;
+        this.textContent = '⏸ 멈춤';
+        timer = setInterval(function () {
+          if (i >= list.length - 1) { stop(); return; }
+          next();
+        }, reduce ? 600 : (key === 'seq' ? 380 : 190));
+      });
+
+      i = 0; paint();   /* 첫 단계를 보여준 채로 시작 */
+    });
+  })();
+</script>

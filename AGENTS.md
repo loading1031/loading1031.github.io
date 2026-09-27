@@ -99,6 +99,8 @@ gh run list -R loading1031/loading1031.github.io
    /blog-lecture   ┘    독자 눈으로 편집     점검 → 푸시 → 배포
    초안 저장             draft 유지         draft 해제, 공개
    draft: true
+
+   같은 재료로 남 앞에서 말할 것이 필요하면 → /blog-deck (아티팩트 덱, 레포에 안 들어간다)
 ```
 
 **`/blog-capture`** — 사용자가 무엇을 알게 됐는지 듣고, 남길 가치가 있는지 판단하고
@@ -127,6 +129,13 @@ gh run list -R loading1031/loading1031.github.io
 
 **`/blog-publish`** — `doctor --build` 로 계정·frontmatter·빌드를 점검하고, draft 를 내리고,
 커밋·푸시하고, Actions 배포를 지켜본 뒤 실제 URL 이 뜨는지 확인한다.
+
+**`/blog-deck`** — 한 주제를 끝까지 판 세션의 마무리로 **발표 자료**를 만든다.
+좌측 목차 + 스크롤 본문 형태의 아티팩트 한 장이고, 레포에는 들어가지 않는다.
+목차 골격을 먼저 배포한 뒤 절 단위로 채운다 — 한 절이 SVG 하나에 표 두 개라 한 번에 못 만든다.
+블로그 글과 **같은 재료를 쓰되 자동 변환하지 않는다**: 덱은 mermaid 가 아니라 인라인 SVG 를 쓰고
+(탭 전환·단계 애니메이션·노드 확대가 필요하다), 테마를 따라가지 않고 **화이트 고정**이다
+(빔프로젝터에서 어두운 배경은 선이 날아간다). 골격은 `.claude/skills/blog-deck/template.html`.
 
 ### 다이어그램은 mermaid 로 (글마다 최소 하나)
 
@@ -183,6 +192,7 @@ astro.config.ts         # 통합, i18n(ko), 폰트, 마크다운 플러그인
 .claude/skills/         # blog-capture / blog-lecture — 초안 쓰기
                         # blog-diagram / blog-terms — 그림·용어 (다른 스킬에서 불러 씀)
                         # blog-refine / blog-publish — 다듬고 발행
+                        # blog-deck — 발표 자료(아티팩트 덱). template.html 이 골격
                         # (모두 이 레포 안에서만 동작)
 ref/                    # 참고 자료 (강의 노트, AI 대화 내보내기). gitignore 됨
 scripts/blog.mjs        # 글 파이프라인 헬퍼 CLI
