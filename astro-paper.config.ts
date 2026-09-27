@@ -13,6 +13,7 @@ export default defineAstroPaperConfig({
     dir: "ltr",
     // 동적 OG 생성은 한글 서브셋 폰트 문제로 끄고 정적 카드를 쓴다.
     ogImage: "default-og.png",
+    naverVerification: "36295e4db0d44578de72c7c79cf270fdc44cb20d",
   },
   posts: {
     perPage: 10,

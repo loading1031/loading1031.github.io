@@ -116,6 +116,15 @@ const rssHref = getRelativeLocaleUrl(
       )
     }
 
+    {
+      site.naverVerification && (
+        <meta
+          name="naver-site-verification"
+          content={site.naverVerification}
+        />
+      )
+    }
+
     <!--
       Inline FOUC-prevention script: sets data-theme on <html> before
       the browser paints. Runs synchronously, no defer/async.
