@@ -14,6 +14,7 @@ import rehypeCallouts from "rehype-callouts";
 import rehypeMermaid from "rehype-mermaid";
 import { rehypeMermaidLineBreaks } from "./src/utils/rehypeMermaidLineBreaks";
 import { rehypeTermTooltips } from "./src/utils/rehypeTermTooltips";
+import { rehypeNoTranslate } from "./src/utils/rehypeNoTranslate";
 import {
   transformerNotationDiff,
   transformerNotationHighlight,
@@ -65,6 +66,8 @@ export default defineConfig({
         rehypeMermaidLineBreaks,
         // 용어 툴팁: [용어](#앵커 "설명") / <abbr title="설명">용어</abbr>
         rehypeTermTooltips,
+        // 코드는 브라우저 번역에서 뺀다. rehype-mermaid 뒤에 둬야 그림은 번역된다
+        rehypeNoTranslate,
       ],
     }),
     // mermaid 는 Shiki 가 코드로 하이라이팅하지 않게 빼둔다.
