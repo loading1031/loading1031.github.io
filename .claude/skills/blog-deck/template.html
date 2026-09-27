@@ -247,6 +247,8 @@
   }
 
   .prose { display: flex; flex-direction: column; gap: 13px; max-width: 64ch; }
+  /* 소절 이름. 목차 하위 항목과 같은 글자로 쓴다 */
+  .body .subhead { margin: 8px 0 -14px; font-size: 16px; font-weight: 600; letter-spacing: -.012em; color: var(--accent); }
   .prose p { margin: 0; font-size: 14.5px; }
   .prose p.lead { font-size: 15.5px; font-weight: 500; letter-spacing: -.012em; }
   .prose p.note-inline { font-size: 13px; color: var(--muted); }
@@ -509,8 +511,8 @@
 
     <div class="toc" id="toc">
       <a href="#s1"><span class="n">01</span><span>첫 절</span></a>
-      <a class="sub" data-parent="s1" href="#s1-1"><span>소제목 — 문장으로</span></a>
-      <a class="sub" data-parent="s1" href="#s1-2"><span>소제목 — 문장으로</span></a>
+      <a class="sub" data-parent="s1" href="#s1-1"><span>소제목 — 용어로</span></a>
+      <a class="sub" data-parent="s1" href="#s1-2"><span>소제목 — 용어로</span></a>
       <a href="#s2"><span class="n">02</span><span>둘째 절</span></a>
       <a class="sub" data-parent="s2" href="#sw"><span>탭으로 보는 것</span></a>
     </div>
@@ -543,8 +545,9 @@
 
         <!-- 채운 뒤의 모습
         <div class="body">
-          <div class="prose" id="s1-1">
-            <p class="lead">결론을 먼저 쓴다.</p>
+          <h4 class="subhead" id="s1-1">소제목 — 목차와 같은 용어</h4>
+          <div class="prose">
+            <p class="lead">결론 한 줄. 짧게.</p>
             <p>근거. <code>식별자</code> 는 이렇게 감싼다.</p>
             <p class="note-inline">곁가지는 작은 글씨로.</p>
           </div>
