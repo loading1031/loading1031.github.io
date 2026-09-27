@@ -3,10 +3,9 @@ title: "섹션4 실습: 인덱스 페이지 안을 직접 열어보기"
 description: "인덱스가 파일 안에서 어떻게 생겼는지부터, key column 과 non-key column 이 어디서 갈리는지까지 pageinspect 로 페이지 바이트를 직접 열어 확인한다."
 pubDatetime: 2026-09-13T01:30:00+09:00
 tags: ["Fundamentals of Database Engineering"]
-draft: true
 ---
 
-[섹션4: 데이터베이스 인덱싱](/study/database/section-4-indexing/)과
+[섹션4,5: 데이터베이스 인덱싱과 B+트리](/study/database/section-4-indexing/)와
 [섹션4: key column 과 non-key column](/study/database/section-4-key-vs-nonkey/)을 쓰면서
 가장 안 믿겼던 것은
 "인덱스 안에 값이 통째로 복사돼 들어 있다" 와 "non-key column 은 내부 페이지에서 잘려 나간다"
@@ -761,7 +760,7 @@ docker rm -f pglab
 
 ## 참고
 
-- [섹션4: 데이터베이스 인덱싱](/study/database/section-4-indexing/) — 1부의 정리 글
+- [섹션4,5: 데이터베이스 인덱싱과 B+트리](/study/database/section-4-indexing/) — 1부의 정리 글
 - [섹션4: key column 과 non-key column](/study/database/section-4-key-vs-nonkey/) — 2·3부의 정리 글
 - [섹션3 실습: 페이지 안을 직접 열어보기](/study/database/section-3-internals-lab/) — 힙 쪽 페이지 구조
 - [pageinspect](https://www.postgresql.org/docs/current/pageinspect.html) — PostgreSQL 공식 문서

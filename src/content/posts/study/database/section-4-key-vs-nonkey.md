@@ -3,7 +3,6 @@ title: "섹션4: key column 과 non-key column"
 description: "차이는 유일성이 아니라 값이 내부 페이지까지 올라가느냐다. non-key column 으로 넣으면 인덱스가 작아지는 게 아니라 트리가 한 층 얕아진다."
 pubDatetime: 2026-09-13T01:29:00+09:00
 tags: ["Fundamentals of Database Engineering"]
-draft: true
 ---
 
 강의는 인덱스를 만들 때 열을 `key column`(식별자)으로 넣을지 `non-key column`(비식별자)으로
@@ -15,7 +14,7 @@ draft: true
 200만 행에서 4단이 3단이 됐고, 조회 한 번에 읽는 페이지가 5장에서 4장으로 줄었다.
 
 이 글은 **인덱스의 구조를 전제로 한다.** 파일과 페이지, 내부 페이지의 항목이 무엇인지가
-안 잡혀 있으면 아래가 안 읽힌다. 그건 [섹션4: 데이터베이스 인덱싱](/study/database/section-4-indexing/)에 따로 정리했다.
+안 잡혀 있으면 아래가 안 읽힌다. 그건 [섹션4,5: 데이터베이스 인덱싱과 B+트리](/study/database/section-4-indexing/)에 따로 정리했다.
 
 **공부 내용**은 강의가 알려준 것, **심화**는 거기서 파고든 것,
 **보충 개념**은 그걸 이해하려다 걸린 DB 일반 용어다.
