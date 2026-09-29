@@ -23,6 +23,7 @@ import {
   education,
   skills,
   certifications,
+  awards,
   featuredProjects,
   formatPeriod,
 } from "@/data/resume";
@@ -215,8 +216,29 @@ const homePath = getRelativeLocaleUrl(locale, "");
                     {item.degree}
                   </span>
                 </div>
+                {item.period && (
+                  <span class="text-muted-foreground font-code text-sm tabular-nums">
+                    {formatPeriod(item.period)}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <!-- 수상 · 연구 -->
+    {
+      awards.length > 0 && (
+        <section class="app-layout-wide pb-12">
+          <h2 class="section-heading">수상 · 연구</h2>
+          <ul class="space-y-2">
+            {awards.map(item => (
+              <li class="flex flex-wrap items-baseline justify-between gap-x-3">
+                <span class="text-sm">{item.name}</span>
                 <span class="text-muted-foreground font-code text-sm tabular-nums">
-                  {formatPeriod(item.period)}
+                  {item.date}
                 </span>
               </li>
             ))}
