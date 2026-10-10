@@ -69,26 +69,68 @@ Zed Java 확장은 이걸 **프록시**로 푼다. Zed와 jdtls 사이에 `java-
 
 시제품도 같은 구조로 만들었다.
 
-```mermaid
-flowchart LR
-  subgraph ZED["Zed"]
-    EXT["Kotlin 확장<br>wasm"]
-    LSPC["LSP 클라이언트"]
-    DAPC["디버거 패널"]
-  end
-  subgraph PROXY["프록시 · Node 스크립트"]
-    HTTP["HTTP 창구"]
-    RELAY["DAP 중계"]
-  end
-  KS["kotlin-server<br>LSP + DAP 서버"]
-  APP["Spring Boot 앱<br>JDWP 5005"]
-  LSPC -- "LSP · stdio" --> KS
-  EXT -- "디버그 시작 요청" --> HTTP
-  HTTP -- "start_debug_server" --> KS
-  DAPC -- "DAP · TCP" --> RELAY
-  RELAY -- "DAP · TCP" --> KS
-  KS -- "JDWP" --> APP
-```
+<figure class="diagram">
+<svg viewBox="0 0 760 600" role="img" aria-label="Zed의 에디터·확장·디버거 패널이 프록시 하나를 거쳐 kotlin-server의 LSP와 DAP 서버에 연결되고, DAP 서버가 JDWP로 Spring Boot 앱에 붙는 구조">
+  <defs><marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="d-arrow" /></marker></defs>
+  <rect x="24" y="16" width="712" height="104" rx="8" class="d-box-dim" />
+  <text x="40" y="38" class="d-title">Zed</text>
+  <rect x="48" y="48" width="200" height="56" rx="8" class="d-box" />
+  <text x="148" y="72" text-anchor="middle" class="d-title">에디터</text>
+  <text x="148" y="90" text-anchor="middle" class="d-muted">LSP 클라이언트</text>
+  <rect x="280" y="48" width="200" height="56" rx="8" class="d-box" />
+  <text x="380" y="72" text-anchor="middle" class="d-title">Kotlin 확장 (wasm)</text>
+  <text x="380" y="90" text-anchor="middle" class="d-mono-muted">get_dap_binary</text>
+  <rect x="512" y="48" width="200" height="56" rx="8" class="d-box" />
+  <text x="612" y="72" text-anchor="middle" class="d-title">디버거 패널</text>
+  <text x="612" y="90" text-anchor="middle" class="d-muted">DAP 클라이언트</text>
+  <rect x="24" y="168" width="712" height="104" rx="8" class="d-box-dim" />
+  <text x="40" y="190" class="d-title">프록시 (Node 스크립트)</text>
+  <rect x="48" y="200" width="200" height="56" rx="8" class="d-box" />
+  <text x="148" y="224" text-anchor="middle" class="d-title">LSP 통과</text>
+  <text x="148" y="242" text-anchor="middle" class="d-muted">메시지를 그대로 전달</text>
+  <rect x="280" y="200" width="200" height="56" rx="8" class="d-box" />
+  <text x="380" y="224" text-anchor="middle" class="d-title">HTTP 창구</text>
+  <text x="380" y="242" text-anchor="middle" class="d-muted">포트 파일로 확장에 알림</text>
+  <rect x="512" y="200" width="200" height="56" rx="8" class="d-box-accent" />
+  <text x="612" y="224" text-anchor="middle" class="d-title">DAP 중계</text>
+  <text x="612" y="242" text-anchor="middle" class="d-muted">file:// 경로 → 일반 경로</text>
+  <rect x="24" y="320" width="712" height="104" rx="8" class="d-box-dim" />
+  <text x="40" y="342" class="d-title">kotlin-server (한 프로세스)</text>
+  <rect x="48" y="352" width="432" height="56" rx="8" class="d-box" />
+  <text x="264" y="376" text-anchor="middle" class="d-title">Kotlin LSP</text>
+  <text x="264" y="394" text-anchor="middle" class="d-muted">start_debug_server로 DAP 서버를 연다</text>
+  <rect x="512" y="352" width="200" height="56" rx="8" class="d-box" />
+  <text x="612" y="376" text-anchor="middle" class="d-title">DAP 서버</text>
+  <text x="612" y="394" text-anchor="middle" class="d-muted">adapterID intellij_jvm</text>
+  <rect x="264" y="472" width="472" height="104" rx="8" class="d-box-dim" />
+  <text x="280" y="494" class="d-title">Spring Boot 앱 (bootRun --debug-jvm)</text>
+  <rect x="68" y="504" width="160" height="56" rx="8" class="d-box" />
+  <text x="148" y="528" text-anchor="middle" class="d-title">curl</text>
+  <text x="148" y="546" text-anchor="middle" class="d-muted">API 요청</text>
+  <rect x="280" y="504" width="200" height="56" rx="8" class="d-box" />
+  <text x="380" y="528" text-anchor="middle" class="d-title">HTTP :8080</text>
+  <text x="380" y="546" text-anchor="middle" class="d-muted">요청 처리</text>
+  <rect x="512" y="504" width="200" height="56" rx="8" class="d-box" />
+  <text x="612" y="528" text-anchor="middle" class="d-title">JDWP :5005</text>
+  <text x="612" y="546" text-anchor="middle" class="d-muted">디버거 접속 대기</text>
+  <path d="M148 104V200" class="d-line" marker-start="url(#arch-arrow)" marker-end="url(#arch-arrow)" />
+  <path d="M148 256V352" class="d-line" marker-start="url(#arch-arrow)" marker-end="url(#arch-arrow)" />
+  <path d="M380 104V200" class="d-line" marker-end="url(#arch-arrow)" />
+  <path d="M380 256V352" class="d-line" marker-end="url(#arch-arrow)" />
+  <path d="M612 104V200" class="d-line" marker-end="url(#arch-arrow)" />
+  <path d="M612 256V352" class="d-line" marker-end="url(#arch-arrow)" />
+  <path d="M612 408V504" class="d-line" marker-end="url(#arch-arrow)" />
+  <path d="M228 532H280" class="d-line" marker-end="url(#arch-arrow)" />
+  <text x="156" y="148" class="d-mono-muted">stdio</text>
+  <text x="388" y="148" class="d-muted">HTTP</text>
+  <text x="620" y="148" class="d-muted">TCP · 중계 포트</text>
+  <text x="156" y="300" class="d-mono-muted">stdio</text>
+  <text x="388" y="300" class="d-mono-muted">start_debug_server</text>
+  <text x="620" y="300" class="d-muted">TCP</text>
+  <text x="620" y="452" class="d-muted">JDWP attach</text>
+</svg>
+<figcaption>전체 구조. 색을 넣은 DAP 중계만 메시지 내용을 바꾼다.</figcaption>
+</figure>
 
 `kotlin-server`는 하나만 뜬다. 에디터 기능과 디버거가 같은 서버를 쓴다. 프록시는 언어 서버의 표준입출력을 그대로 통과시키면서, 디버그를 시작할 때만 자기 요청을 하나 끼워 넣는다.
 
