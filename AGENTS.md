@@ -1,6 +1,6 @@
 # loading.log
 
-공부한 내용과 Claude와의 대화에서 얻은 인사이트를 정리해 올리는 개인 기술 블로그.
+공부한 내용과 AI 도구와의 대화에서 얻은 인사이트를 정리해 올리는 개인 기술 블로그.
 [AstroPaper](https://github.com/satnaing/astro-paper) v6 기반 (Astro 7 + Tailwind 4),
 홈은 소개, 글은 네 섹션으로 나뉜다. GitHub Pages 배포.
 
@@ -33,17 +33,19 @@ gh run list -R loading1031/loading1031.github.io
 
 ## 글이 올라오는 경로
 
-이 블로그는 손으로 글을 쓰는 곳이 아니라, **Claude 세션에서 나온 내용을 정리해 올리는 곳**이다.
+이 블로그는 공부와 작업에서 확인한 내용을 정리해 올리는 곳이다. Claude·Codex 등 어떤 AI 도구를 쓰더라도 아래의 주제·보안 규칙을 똑같이 적용한다.
 
-### ⚠️ 글은 반드시 이 폴더에서 연 세션에서 쓴다
+### ⚠️ 글은 반드시 이 레포의 세션에서 쓴다
 
 다른 프로젝트(특히 회사 프로젝트) 세션에서 블로그 글을 쓰면, **그 세션의 컨텍스트에
 사내 코드와 내부 정보가 들어 있는 상태로 공개될 글을 만들게 된다.** 조심해도 새어 나갈 수 있고,
 한 번 발행되면 되돌리기 어렵다.
 
-작업하다 남길 거리가 생기면 그 세션에서는 **한두 줄 메모만** 챙겨 나오고
-(무엇을 알게 됐는지 / 참고 링크), 이 폴더에서 새 세션을 열어 거기서 쓴다.
-다른 세션이 이 폴더 경로를 알고 있더라도 그 세션에서 직접 쓰지 않는다.
+다른 프로젝트(특히 회사 프로젝트) 세션에는 사내 코드와 내부 정보가 남아 있을 수 있다.
+그런 세션에서 블로그 글을 직접 작성하지 않는다. 남길 거리가 생기면 무엇을 알게 됐는지와
+공개 가능한 참고 링크만 짧게 메모하고, 이 레포에서 연 별도 세션으로 가져와 쓴다.
+Codex에서는 이 레포를 프로젝트로 연 세션을 사용한다. 작업 경로가 worktree일 수 있으므로
+특정 사용자 홈의 절대 경로를 기준으로 삼지 않는다. `scripts/blog.mjs` 는 레포 바깥 실행을 거부한다.
 
 `scripts/blog.mjs` 는 레포 밖에서 실행되면 거부한다. 문서상 규칙이 아니라 실제로 막혀 있다.
 
@@ -92,23 +94,23 @@ gh run list -R loading1031/loading1031.github.io
 ### 세 단계
 
 ```
-   [ 이 폴더에서 연 세션 · 한 주제 = 한 세션 ]
+   [ 이 레포에서 연 세션 · 한 주제 = 한 세션 ]
 
-   /blog-capture   ┐
-   또는            ├→   /blog-refine   →   /blog-publish
-   /blog-lecture   ┘    독자 눈으로 편집     점검 → 푸시 → 배포
+   $blog-capture   ┐
+   또는            ├→   $blog-refine  →   $blog-publish
+   $blog-lecture   ┘    독자 눈으로 편집     점검 → 푸시 → 배포
    초안 저장             draft 유지         draft 해제, 공개
    draft: true
 
-   같은 재료로 남 앞에서 말할 것이 필요하면 → /blog-deck (아티팩트 덱, 레포에 안 들어간다)
+   같은 재료로 남 앞에서 말할 것이 필요하면 → $blog-deck (GitHub Pages의 /decks/<slug>/)
 ```
 
-**`/blog-capture`** — 사용자가 무엇을 알게 됐는지 듣고, 남길 가치가 있는지 판단하고
+**`$blog-capture`** — 사용자가 무엇을 알게 됐는지 듣고, 남길 가치가 있는지 판단하고
 (기준: 6개월 뒤의 내가 읽고 바로 써먹을 수 있는가), 회사 정보를 걷어낸 뒤 글로 쓴다.
 회사 관련 내용은 익명화가 아니라 **같은 원리를 보여주는 새 최소 재현 예제로 다시 쓴다.**
 그렇게 다시 쓸 수 없으면 글로 만들지 않는다. `draft: true` 로 저장되므로 배포되지 않는다.
 
-**`/blog-lecture`** — 온라인 강의 한 섹션을 정리할 때. 강의별 섹션·태그·제목 규칙
+**`$blog-lecture`** — 온라인 강의 한 섹션을 정리할 때. 강의별 섹션·태그·제목 규칙
 (`섹션N: 주제`)이 스킬 안의 등록부에 고정돼 있고, `ref/` 자료를 재료로 읽는다.
 강의 요약이 아니라 **강의가 답을 안 준 지점과 내가 막혔던 것**을 쓰게 한다.
 글은 **공부 내용 / 심화 / 보충 개념** 세 층으로 나눈다 — 강의가 알려준 것,
@@ -118,24 +120,26 @@ gh run list -R loading1031/loading1031.github.io
 `<슬러그>-lab` 으로 실습 글을 따로 만들고 서로 링크한다. 읽는 글과 따라 하는 글은
 읽는 방식이 달라서 한 페이지에 두면 둘 다 불편해진다.
 
-**`/blog-diagram`** — 그림이 필요할 때 위 두 스킬이 불러 쓰는 참조 스킬.
+**`$blog-diagram`** — 그림이 필요할 때 위 두 스킬이 불러 쓰는 참조 스킬.
 무엇을 그릴지 고르는 기준, mermaid 문법, 이 레포에서 실제로 깨졌던 함정, 렌더 확인 방법.
 
-**`/blog-terms`** — 독자가 모를 용어에 한 줄 설명 툴팁을 달고, 긴 설명은 보충 개념 절로
+**`$blog-terms`** — 독자가 모를 용어에 한 줄 설명 툴팁을 달고, 긴 설명은 보충 개념 절로
 연결한다. `<abbr title="...">` 은 툴팁만, `[용어](#앵커 "설명")` 은 툴팁 + 클릭 이동.
 
-**`/blog-refine`** — 맥락 없는 독자의 눈으로 재검토. AI 말투 제거, 결론 앞으로 끌어내기,
+**`$blog-refine`** — 맥락 없는 독자의 눈으로 재검토. AI 말투 제거, 결론 앞으로 끌어내기,
 코드 실행 검증, 링크 확인, 보안 재확인. `draft` 는 그대로 둔다.
 
-**`/blog-publish`** — `doctor --build` 로 계정·frontmatter·빌드를 점검하고, draft 를 내리고,
+**`$blog-publish`** — `doctor --build` 로 계정·frontmatter·빌드를 점검하고, 글이면 draft 를 내리고,
 커밋·푸시하고, Actions 배포를 지켜본 뒤 실제 URL 이 뜨는지 확인한다.
 
-**`/blog-deck`** — 한 주제를 끝까지 판 세션의 마무리로 **발표 자료**를 만든다.
-좌측 목차 + 스크롤 본문 형태의 아티팩트 한 장이고, 레포에는 들어가지 않는다.
-목차 골격을 먼저 배포한 뒤 절 단위로 채운다 — 한 절이 SVG 하나에 표 두 개라 한 번에 못 만든다.
+**`$blog-deck`** — 한 주제를 끝까지 판 세션의 마무리로 **발표 자료**를 만든다.
+`src/pages/decks/<slug>/index.html` 에 저장하는 공개 웹 페이지다. 좌측 목차와 스크롤 본문을 갖춘다.
+목차 골격을 먼저 만들고 사용자가 검토한 뒤 절 단위로 채운다 — 한 절이 SVG 하나에 표 두 개라 한 번에 못 만든다.
 블로그 글과 **같은 재료를 쓰되 자동 변환하지 않는다**: 덱은 mermaid 가 아니라 인라인 SVG 를 쓰고
 (탭 전환·단계 애니메이션·노드 확대가 필요하다), 테마를 따라가지 않고 **화이트 고정**이다
-(빔프로젝터에서 어두운 배경은 선이 날아간다). 골격은 `.claude/skills/blog-deck/template.html`.
+(빔프로젝터에서 어두운 배경은 선이 날아간다). 골격은 `.agents/skills/blog-deck/template.html`.
+덱 페이지는 파일을 추가하는 순간 프로덕션 빌드에 포함된다. 초안 검토는 로컬에서 하고,
+GitHub Pages 공개는 일반 배포와 같이 `$blog-publish`의 확인 절차를 거친다.
 
 ### 다이어그램은 mermaid 로 (글마다 최소 하나)
 
@@ -145,7 +149,7 @@ gh run list -R loading1031/loading1031.github.io
 ` ```mermaid ` 코드펜스를 쓰면 빌드 시점에 SVG 로 구워진다. 클라이언트 JS 는 0이고
 색은 CSS 가 테마에 맞춰 덮어쓴다.
 
-**문법·함정·확인 방법은 `/blog-diagram` 스킬에 정리돼 있다.** 그림을 그릴 때는 그걸 읽는다.
+**문법·함정·확인 방법은 `$blog-diagram` 스킬에 정리돼 있다.** 그림을 그릴 때는 그걸 읽는다.
 여기서는 건드리면 안 되는 것만 적어 둔다.
 
 - `astro.config.ts` — `rehypeMermaid` 옵션, `rehypeMermaidLineBreaks`,
@@ -163,7 +167,7 @@ gh run list -R loading1031/loading1031.github.io
 디렉터리가 곧 섹션이고 URL 이 된다 — `posts/study/hydration.md` → `/study/hydration/`.
 
 글의 기준: **6개월 뒤의 내가 읽고 바로 써먹을 수 있는가.**
-Claude 답변은 그대로 붙여넣지 말고 이해한 말로 다시 쓴다.
+AI 답변은 그대로 붙여넣지 말고 이해한 말로 다시 쓴다.
 
 ## 명령어
 
@@ -189,10 +193,14 @@ node scripts/blog.mjs doctor --build           # 계정/frontmatter/빌드 점�
 ```
 astro-paper.config.ts   # 사이트 제목·설명·소셜·기능 토글 (여기부터 본다)
 astro.config.ts         # 통합, i18n(ko), 폰트, 마크다운 플러그인
-.claude/skills/         # blog-capture / blog-lecture — 초안 쓰기
+.agents/skills/         # Codex skills: blog-capture / blog-lecture — 초안 쓰기
+                        # blog-diagram / blog-terms — 그림·용어
+                        # blog-refine / blog-publish — 다듬고 발행
+                        # blog-deck — GitHub Pages 발표 페이지
+.claude/skills/         # Claude용 스킬과 별도 아티팩트 덱 템플릿
                         # blog-diagram / blog-terms — 그림·용어 (다른 스킬에서 불러 씀)
                         # blog-refine / blog-publish — 다듬고 발행
-                        # blog-deck — 발표 자료(아티팩트 덱). template.html 이 골격
+                        # blog-deck — Claude 아티팩트 덱
                         # (모두 이 레포 안에서만 동작)
 ref/                    # 참고 자료 (강의 노트, AI 대화 내보내기). gitignore 됨
 scripts/blog.mjs        # 글 파이프라인 헬퍼 CLI
@@ -221,7 +229,7 @@ src/
 | 섹션 | 디렉터리 / URL | 담는 것 |
 | --- | --- | --- |
 | 프로젝트 | `project` | 만들면서 부딪힌 것들. 왜 그렇게 만들었는지까지 |
-| Study | `study` | 공부 기록, Claude와의 대화에서 건진 인사이트 |
+| Study | `study` | 공부 기록, AI 도구와의 대화에서 건진 인사이트 |
 | └ Database | `study/database` | 트랜잭션, 인덱스, 복제. 강의 정리가 여기 쌓인다 |
 | 자격증 | `cert` | 준비 과정, 정리한 개념, 시험 후기 |
 | 논문 | `paper` | 읽은 논문을 내 말로 다시 정리한 기록 |

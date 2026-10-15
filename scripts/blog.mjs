@@ -108,7 +108,7 @@ function requireInsideRepo() {
     console.error(`    블로그 폴더: ${root}`);
     console.error("");
     console.error("  다른 프로젝트 세션에서 블로그 글을 쓰면 그 세션의 컨텍스트(사내 코드 등)가");
-    console.error("  공개될 글에 섞일 수 있다. 블로그 폴더에서 세션을 새로 열고 거기서 쓸 것.");
+    console.error("  공개될 글에 섞일 수 있다. 이 레포를 프로젝트로 연 세션에서 작성할 것.");
     process.exit(1);
   }
 }

@@ -114,7 +114,7 @@ export const featuredProjects: {
     name: "골방(Golbang)",
     url: "https://play.google.com/store/apps/details?id=com.ines.golbang",
     description:
-      "골프 모임·기록 관리 앱. Full-stack 3인으로 Android·iOS 동시 런칭 후 실사용자를 받으며 운영했습니다. (2024.07 – 2026.01)",
+      "골프 모임·기록 관리 앱. Full-stack 3인으로 Android·iOS에 동시 런칭했습니다. (2024.07 – 2026.01)",
     stack: ["Flutter", "Django"],
   },
   {
