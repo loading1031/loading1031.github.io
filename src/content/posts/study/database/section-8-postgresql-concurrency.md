@@ -36,16 +36,25 @@ COMMIT;
 
 이 조회에서 테이블 관계에 대한 `AccessShareLock`이 보인다. 이것은 테이블 잠금 확인이고, 행 잠금 여부는 `SELECT ... FOR SHARE`를 추가해 별도로 비교해야 한다.
 
-테이블 잠금은 테이블 정의·존재에 영향을 주는 작업이나 테이블 단위 충돌을 조정하고, 행 잠금은 특정 튜플을 갱신·삭제하거나 `FOR SHARE`·`FOR UPDATE`처럼 명시적으로 잠그는 세션끼리 충돌을 조정한다. 이름에 `ROW`가 있는 테이블 잠금 모드(`ROW SHARE`, `ROW EXCLUSIVE`)도 행 자체를 잠근다는 뜻이 아니다.
+테이블 잠금은 테이블 정의·존재에 영향을 주는 작업 사이를 조정하고, 행 잠금은 같은 튜플을 바꾸거나 명시적으로 잠그려는 작업 사이를 조정한다. 예를 들어 키를 바꾸지 않는 `UPDATE`가 행을 갱신 중이면 다른 트랜잭션의 `UPDATE`, `DELETE`, `SELECT ... FOR SHARE`, `SELECT ... FOR NO KEY UPDATE`, `SELECT ... FOR UPDATE`는 그 행에서 기다릴 수 있다. 반면 일반 `SELECT`는 행 잠금을 요청하지 않으므로 기다리지 않고 자기 스냅샷에서 보이는 커밋 버전을 읽는다. 이름에 `ROW`가 있는 테이블 잠금 모드(`ROW SHARE`, `ROW EXCLUSIVE`)도 행 자체를 잠근다는 뜻이 아니다.
 
 ```mermaid
-flowchart LR
-  R["일반 SELECT"] --> S["문장 스냅샷"] --> V["보이는 튜플 버전"]
-  W["UPDATE"] --> N["새 버전 기록"]
-  W --> L["대상 튜플 잠금"]
-  L -. "일반 읽기와 비충돌" .-> R
-  X["충돌하는 갱신·명시 잠금"] --> L
+sequenceDiagram
+  participant A as 세션 A
+  participant DB as PostgreSQL
+  participant B as 세션 B
+  A->>DB: BEGIN
+  A->>DB: UPDATE accounts SET balance = 90 WHERE id = 1
+  Note over A,DB: id=1 행을 갱신 중, 아직 미커밋
+  B->>DB: SELECT balance FROM accounts WHERE id = 1
+  DB-->>B: 기존 커밋 값 100 반환
+  B->>DB: SELECT balance FROM accounts WHERE id = 1 FOR SHARE
+  Note over B,DB: 같은 행의 잠금이 충돌해 대기
+  A->>DB: COMMIT
+  DB-->>B: 대기 해제, 현재 보이는 값 90 반환
 ```
+
+그림의 두 번째 조회는 `FOR SHARE`를 붙였기 때문에 앞선 `UPDATE`와 충돌한다. 첫 조회에는 잠금 절이 없으므로 A의 쓰기를 기다리지 않는다. 즉 “충돌하는 갱신·명시 잠금”은 같은 행을 바꾸는 `UPDATE`·`DELETE`나 `FOR SHARE`·`FOR NO KEY UPDATE`·`FOR UPDATE`처럼 행 잠금을 요구하는 조회를 뜻한다. 구체적으로 어떤 잠금 모드끼리 충돌하는지는 아래 호환 표를 보면 된다.
 
 먼저 아래 표는 **명시적으로 요청한 행 잠금 모드끼리**의 관계다. 예를 들어 한 트랜잭션이 `FOR NO KEY UPDATE`, 다른 트랜잭션이 `FOR SHARE`를 같은 행에 요청하면 충돌해 한쪽이 기다린다. `FOR NO KEY UPDATE`와 `FOR KEY SHARE`는 동시에 잡을 수 있다. 일반 `SELECT`는 행 잠금을 요청하지 않으므로 이 표의 행 잠금들과 충돌하지 않는다.
 
