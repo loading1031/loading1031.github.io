@@ -1,0 +1,95 @@
+---
+import { getPostUrl } from "@/utils/getPostPaths";
+import config from "@/config";
+
+type OlderPost = {
+  id: string;
+  title: string;
+  filePath: string | undefined;
+};
+
+type Props = {
+  olderPosts: OlderPost[];
+};
+
+const { olderPosts } = Astro.props;
+const locale = Astro.currentLocale ?? config.site.lang;
+const pageSize = 10;
+const pages = Array.from(
+  { length: Math.ceil(olderPosts.length / pageSize) },
+  (_, index) => olderPosts.slice(index * pageSize, (index + 1) * pageSize)
+);
+---
+
+{
+  pages.length > 0 && (
+    <nav data-older-posts aria-label="이전 글 목록" class="my-8">
+      <h2 class="mb-4 text-lg font-semibold">이전 글</h2>
+      {pages.map((page, index) => (
+        <ol data-older-page hidden={index !== 0} class="space-y-3">
+          {page.map(post => (
+            <li>
+              <a
+                href={getPostUrl(post.id, post.filePath, locale)}
+                class="text-accent/85 hover:underline"
+              >
+                {post.title}
+              </a>
+            </li>
+          ))}
+        </ol>
+      ))}
+      {pages.length > 1 && (
+        <div class="mt-5 flex items-center justify-center gap-4">
+          <button
+            type="button"
+            data-older-prev
+            disabled
+            class="cursor-pointer disabled:cursor-default disabled:opacity-40"
+          >
+            더 최근
+          </button>
+          <span data-older-status aria-live="polite">1 / {pages.length}</span>
+          <button
+            type="button"
+            data-older-next
+            class="cursor-pointer disabled:cursor-default disabled:opacity-40"
+          >
+            더 이전
+          </button>
+        </div>
+      )}
+    </nav>
+  )
+}
+
+<script>
+  function initOlderPosts() {
+    document.querySelectorAll<HTMLElement>("[data-older-posts]").forEach(root => {
+      if (root.dataset.initialized) return;
+      root.dataset.initialized = "true";
+
+      const pages = Array.from(root.querySelectorAll<HTMLOListElement>("[data-older-page]"));
+      const previous = root.querySelector<HTMLButtonElement>("[data-older-prev]");
+      const next = root.querySelector<HTMLButtonElement>("[data-older-next]");
+      const status = root.querySelector<HTMLElement>("[data-older-status]");
+      if (!previous || !next || !status) return;
+
+      let current = 0;
+      const showPage = (index: number) => {
+        pages[current].hidden = true;
+        current = index;
+        pages[current].hidden = false;
+        previous.disabled = current === 0;
+        next.disabled = current === pages.length - 1;
+        status.textContent = `${current + 1} / ${pages.length}`;
+      };
+
+      previous.addEventListener("click", () => showPage(current - 1));
+      next.addEventListener("click", () => showPage(current + 1));
+    });
+  }
+
+  document.addEventListener("astro:page-load", initOlderPosts);
+  initOlderPosts();
+</script>

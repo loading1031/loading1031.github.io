@@ -19,63 +19,38 @@ import BackToTopButton from "./_components/BackToTopButton.astro";
 import ViewCounter from "@/components/ViewCounter.astro";
 import Comments from "@/components/Comments.astro";
 import AdSlot from "@/components/AdSlot.astro";
-import AdjacentPostNav from "./_components/AdjacentPostNav.astro";
+import OlderPostsNav from "./_components/OlderPostsNav.astro";
 import config from "@/config";
 
 export async function getStaticPaths() {
   const posts = await getCollection("posts");
   const sortedPosts = getSortedPosts(posts);
-  const seriesPosts = new Map<string, CollectionEntry<"posts">[]>();
 
-  for (const post of sortedPosts) {
-    const readingOrder = post.data.readingOrder;
-    if (!readingOrder) continue;
-    const series = seriesPosts.get(readingOrder.series) ?? [];
-    series.push(post);
-    seriesPosts.set(readingOrder.series, series);
-  }
-  for (const series of seriesPosts.values()) {
-    series.sort(
-      (a, b) =>
-        a.data.readingOrder!.position - b.data.readingOrder!.position
-    );
-  }
-
-  return sortedPosts.map((post, index) => {
-    const readingOrder = post.data.readingOrder;
-    const series = readingOrder && seriesPosts.get(readingOrder.series);
-    const position = series?.findIndex(entry => entry.id === post.id) ?? -1;
-    const prev = series
-      ? series[position - 1]
-      : sortedPosts[index + 1];
-    const next = series
-      ? series[position + 1]
-      : sortedPosts[index - 1];
-    const adjacent = (entry: CollectionEntry<"posts"> | undefined) =>
-      entry
-        ? { id: entry.id, title: entry.data.title, filePath: entry.filePath }
-        : null;
-
-    return {
-      params: { slug: getPostSlug(post.id, post.filePath) },
-      props: { post, prevPost: adjacent(prev), nextPost: adjacent(next) },
-    };
-  });
+  return sortedPosts.map((post, index) => ({
+    params: { slug: getPostSlug(post.id, post.filePath) },
+    props: {
+      post,
+      olderPosts: sortedPosts.slice(index + 1).map(entry => ({
+        id: entry.id,
+        title: entry.data.title,
+        filePath: entry.filePath,
+      })),
+    },
+  }));
 }
 
-type AdjacentPost = {
+type OlderPost = {
   id: string;
   title: string;
   filePath: string | undefined;
-} | null;
+};
 
 type Props = {
   post: CollectionEntry<"posts">;
-  prevPost: AdjacentPost;
-  nextPost: AdjacentPost;
+  olderPosts: OlderPost[];
 };
 
-const { post, prevPost, nextPost } = Astro.props;
+const { post, olderPosts } = Astro.props;
 const locale = Astro.currentLocale ?? config.site.lang;
 const section = sectionOf(post.id);
 
@@ -194,7 +169,7 @@ const ogImage = ogImageUrl
 
     <hr class="my-8 border-dashed" />
 
-    <AdjacentPostNav {prevPost} {nextPost} />
+    <OlderPostsNav {olderPosts} />
 
     <AdSlot slot="postBottom" />
 

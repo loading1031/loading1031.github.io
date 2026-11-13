@@ -2,7 +2,6 @@
 title: "섹션12: 데이터베이스 커서"
 description: "커서의 현재 위치와 STATIC·KEYSET·DYNAMIC의 저장 방식을 비교하고, Python 커서와 트랜잭션 왕복 횟수를 구분한다."
 pubDatetime: 2026-11-13T11:43:01+09:00
-readingOrder: { series: section-12-database-cursors, position: 1 }
 tags: ["Fundamentals of Database Engineering"]
 ---
 
