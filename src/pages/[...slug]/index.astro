@@ -25,31 +25,42 @@ import config from "@/config";
 export async function getStaticPaths() {
   const posts = await getCollection("posts");
   const sortedPosts = getSortedPosts(posts);
+  const seriesPosts = new Map<string, CollectionEntry<"posts">[]>();
 
-  return sortedPosts.map((post, index) => ({
-    params: { slug: getPostSlug(post.id, post.filePath) },
-    props: {
-      post,
-      // sortedPosts is newest-first, so "older" (prev) is a higher index
-      // and "newer" (next) is a lower index.
-      prevPost:
-        index < sortedPosts.length - 1
-          ? {
-              id: sortedPosts[index + 1].id,
-              title: sortedPosts[index + 1].data.title,
-              filePath: sortedPosts[index + 1].filePath,
-            }
-          : null,
-      nextPost:
-        index > 0
-          ? {
-              id: sortedPosts[index - 1].id,
-              title: sortedPosts[index - 1].data.title,
-              filePath: sortedPosts[index - 1].filePath,
-            }
-          : null,
-    },
-  }));
+  for (const post of sortedPosts) {
+    const readingOrder = post.data.readingOrder;
+    if (!readingOrder) continue;
+    const series = seriesPosts.get(readingOrder.series) ?? [];
+    series.push(post);
+    seriesPosts.set(readingOrder.series, series);
+  }
+  for (const series of seriesPosts.values()) {
+    series.sort(
+      (a, b) =>
+        a.data.readingOrder!.position - b.data.readingOrder!.position
+    );
+  }
+
+  return sortedPosts.map((post, index) => {
+    const readingOrder = post.data.readingOrder;
+    const series = readingOrder && seriesPosts.get(readingOrder.series);
+    const position = series?.findIndex(entry => entry.id === post.id) ?? -1;
+    const prev = series
+      ? series[position - 1]
+      : sortedPosts[index + 1];
+    const next = series
+      ? series[position + 1]
+      : sortedPosts[index - 1];
+    const adjacent = (entry: CollectionEntry<"posts"> | undefined) =>
+      entry
+        ? { id: entry.id, title: entry.data.title, filePath: entry.filePath }
+        : null;
+
+    return {
+      params: { slug: getPostSlug(post.id, post.filePath) },
+      props: { post, prevPost: adjacent(prev), nextPost: adjacent(next) },
+    };
+  });
 }
 
 type AdjacentPost = {

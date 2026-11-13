@@ -2,6 +2,7 @@
 title: "섹션12 실습: SQL Server 커서 타입과 tempdb 확인"
 description: "SQL Server 2022에서 DYNAMIC·STATIC·KEYSET의 반환값과 타입 전환, tempdb 할당, REPEATABLE READ 잠금을 확인한다."
 pubDatetime: 2026-11-13T11:43:00+09:00
+readingOrder: { series: section-12-database-cursors, position: 2 }
 tags: ["Fundamentals of Database Engineering"]
 ---
 
