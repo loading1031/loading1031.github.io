@@ -11,9 +11,10 @@ type PostLink = {
 type Props = {
   postLinks: PostLink[];
   currentIndex: number;
+  sectionLabel: string;
 };
 
-const { postLinks, currentIndex } = Astro.props;
+const { postLinks, currentIndex, sectionLabel } = Astro.props;
 const locale = Astro.currentLocale ?? config.site.lang;
 const pageSize = 10;
 const lastStart = Math.max(0, postLinks.length - pageSize);
@@ -26,10 +27,10 @@ const initialStart = Math.min(
 <nav
   data-post-list
   data-initial-start={initialStart}
-  aria-label="글 목록"
+  aria-label={`${sectionLabel} 글 목록`}
   class="my-8"
 >
-  <h2 class="mb-4 text-lg font-semibold">글 목록</h2>
+  <h2 class="mb-4 text-lg font-semibold">{sectionLabel} 글 목록</h2>
   <ol class="space-y-3">
     {
       postLinks.map((post, index) => (
